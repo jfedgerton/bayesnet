@@ -22,10 +22,7 @@ create_group_data <- function(group.data, formula.stage.1)
   group.var.names <- colnames(group.data)
   group.var.names <- group.var.names[group.var.names != "Group_ID"]
 
-  if (grepl("factor", group.var.names) == T)
-  {
-    print("Warning: nodefactor produces missing values.")
-  }
+
   for (vert.atts in 1:length(group.var.names))
   {
     group.data.for.analysis %v% group.var.names[vert.atts] <- group.data[,group.var.names[vert.atts]]
@@ -40,7 +37,8 @@ create_group_data <- function(group.data, formula.stage.1)
       grepl("dgwe", formula.stage.1) == T |
       grepl("edgecov", formula.stage.1) == T |
       grepl("kstar", formula.stage.1) == T |
-      grepl("absdiffcat", formula.stage.1) == T)
+      grepl("absdiffcat", formula.stage.1) == T |
+      grepl("nodefactor", formula.stage.1) == T)
   {
     cat("The program does not support one or more stage 1 coefficients.")
   } else {
@@ -50,6 +48,7 @@ create_group_data <- function(group.data, formula.stage.1)
 
     ncoef.group <- length(dta.array.group$predictor[1,2,])
     dta.group <- matrix(0, nrow=group.dyads, ncol=3 + ncoef.group)
+
 
     idx.group <- 1
     for (tail.group in 1:(group.nodes-1)) {
