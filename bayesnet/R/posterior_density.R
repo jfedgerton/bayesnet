@@ -27,7 +27,7 @@ model_check <- function(meergm.fit = NULL, custom_var_names = NULL){
     temp_data$iteration <- rep(1:iteration_check, ncol(meergm.fit$stan.fit))
     temp_data$chains <- as.character(sort(rep(1:ncol(meergm.fit$stan.fit), iteration_check)))
     dens_plot <- ggplot(temp_data) +
-      geom_density(aes(Var_Plot), fill = "lightblue", adjust = 3) +
+      geom_density(aes(Var_Plot), fill = "lightblue") +
       labs(x = paste0("n = ", nrow(data_to_plot)),
            title = paste0("Posterior Distribution ", all_var_to_plot[coef_loop])) +
       theme_bw()
