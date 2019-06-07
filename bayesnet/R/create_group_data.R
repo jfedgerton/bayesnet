@@ -109,15 +109,18 @@ create_group_data <- function(group.data, formula.stage.1)
     dta.group[, "Group_ID"] <- Grp[,3]
 
     ## Fix factor variables
-    fix_factor_vars <- dta.group[,grepl("nodefactor", colnames(dta.group))]
-    factor_vars_form1 <- colnames(fix_factor_vars)
-    factor_vars_form1 <- gsub("nodefactor", "", factor_vars_form1)
-    factor_vars_form1 <- gsub("[[:digit:]]+", "", factor_vars_form1)
-    factor_vars_form1 <- unique(gsub("\\.", "", factor_vars_form1))
-
-    new_factor_variable_list <- list()
-    for (col_check_factor in 1:length(factor_vars_form1))
+    if (sum(grepl("nodefactor", formula.stage.1)) > 0)
     {
+      fix_factor_vars <- data.frame(dta.group[,grepl("nodefactor", colnames(dta.group))])
+      colnames(fix_factor_vars) <- colnames(dta.group)[grepl("nodefactor", colnames(dta.group))]
+      factor_vars_form1 <- colnames(fix_factor_vars)
+      factor_vars_form1 <- gsub("nodefactor", "", factor_vars_form1)
+      factor_vars_form1 <- gsub("[[:digit:]]+", "", factor_vars_form1)
+      factor_vars_form1 <- unique(gsub("\\.", "", factor_vars_form1))
+
+      new_factor_variable_list <- list()
+      for (col_check_factor in 1:length(factor_vars_form1))
+      {
         factor_permutations <- expand.grid(unique(group.data$Group_ID), unique(group.data$Group_ID))
         factor_permutations$Keep <- factor_permutations$Var1 <= factor_permutations$Var2
         factor_permutations <- subset(factor_permutations, Keep == T)
@@ -126,9 +129,9 @@ create_group_data <- function(group.data, formula.stage.1)
         original_data_to_factorize <- group.data[,colnames(group.data) %in% c("Group_ID", factor_vars_form1[col_check_factor])]
         factor_permutations <- merge(factor_permutations,
                                      original_data_to_factorize,
-                                       by.x = "Group1",
-                                       by.y = "Group_ID",
-                                       all = T)
+                                     by.x = "Group1",
+                                     by.y = "Group_ID",
+                                     all = T)
 
         colnames(factor_permutations)[3] <- "Group1_Factor"
 
@@ -160,29 +163,33 @@ create_group_data <- function(group.data, formula.stage.1)
         factor_permutations <- factor_permutations[,colnames(factor_permutations) %in% c("Group1", "Group2", new_col_names)]
 
         new_factor_variable_list[[col_check_factor]] <- factor_permutations
-    }
-    factor_permutations <- factor_permutations[,colnames(factor_permutations) %in% c("Group1", "Group2")]
-    for (list_length in 1:length(new_factor_variable_list))
-    {
-      factor_permutations <- merge(factor_permutations,
-                                   new_factor_variable_list[[list_length]],
-                                   by = c("Group1", "Group2"))
-    }
-
-    dta.group <- dta.group[,!(colnames(dta.group) %in% colnames(fix_factor_vars))]
-    factor_permutations$Group1 <- paste0("Group", factor_permutations$Group1)
-    factor_permutations$Group2 <- paste0("Group", factor_permutations$Group2)
-    dta.group <- merge(dta.group,
-                       factor_permutations,
-                       by = c("Group1", "Group2"))
       }
-   }
+      factor_permutations <- factor_permutations[,colnames(factor_permutations) %in% c("Group1", "Group2")]
+      for (list_length in 1:length(new_factor_variable_list))
+      {
+        factor_permutations <- merge(factor_permutations,
+                                     new_factor_variable_list[[list_length]],
+                                     by = c("Group1", "Group2"))
+      }
 
- if (grepl("ingroup", formula.stage.1))
- {
-   dta.group$ingroup <- 0
-   dta.group$ingroup[dta.group$Group1 == dta.group$Group2] <- 1
- }
+      dta.group <- dta.group[,!(colnames(dta.group) %in% colnames(fix_factor_vars))]
+      factor_permutations$Group1 <- paste0("Group", factor_permutations$Group1)
+      factor_permutations$Group2 <- paste0("Group", factor_permutations$Group2)
+      dta.group <- merge(dta.group,
+                         factor_permutations,
+                         by = c("Group1", "Group2"))
+
+      dta.group <- arrange(dta.group,
+                           Group1, Group2)
+    }
+
+    ## Creats and in and outgroup variable.
+    if (grepl("ingroup", formula.stage.1))
+    {
+      dta.group$ingroup <- 0
+      dta.group$ingroup[dta.group$Group1 == dta.group$Group2] <- 1
+    }
     return(dta.group)
   }
 }
+
