@@ -46,7 +46,7 @@ create_group_data <- function(group.data, formula.stage.1)
     formula.stage.1 = gsub(" ", "", formula.stage.1)
     if (grepl("\\+ingroup", formula.stage.1) | substr(formula.stage.1, 1, 7) == "ingroup")
     {
-      if (grepl("+ingroup", formula.stage.1))
+      if (grepl("\\+ingroup", formula.stage.1))
       {
         formula.stage.1 = gsub("\\+ingroup", "", formula.stage.1)  
       } else
