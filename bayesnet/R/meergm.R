@@ -10,11 +10,7 @@ meergm <- function(formula.stage.1, formula.stage.2, group.data, net, chains = 4
     warning("Curved spaced parameters may be biased.")
   }
   
-  if(network::is.directed(net) == T)
-  {
-    cat("Does not support directed networks")
-  } else
-  {
+ 
     group.data <- create_group_data(group.data = group.data, formula.stage.1 = formula.stage.1)
     
     if ("Group1" %in% colnames(group.data))
@@ -150,5 +146,5 @@ meergm <- function(formula.stage.1, formula.stage.2, group.data, net, chains = 4
       } else{
        cat('Error in the group data.')
     }
-  }
+  
 }
