@@ -36,14 +36,14 @@ prepare_meergm_data <- function(net, group.data, form, verbose=FALSE)
     
     if (isTRUE(verbose)) cat("\n##   setting group effects indicators...\n")
     
-    } else {
+
       Soc <- to_indicator(dta[,c("Sociality1", "Sociality2")], "Node")
       Grp <- to_indicator(dta[,c("Group1", "Group2")], "Group")
       dta[, "Sociality1"] <- Soc[,1]
       dta[, "Sociality2"] <- Soc[,2]
       dta[, "Group1"] <- Grp[,1]
       dta[, "Group2"] <- Grp[,2]
-    }
+  
   } else {
     if (isTRUE(verbose)) cat("\n## Preparing MEERGM dataset...")
     nodes <- nrow(as.matrix(net))
