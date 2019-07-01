@@ -88,7 +88,7 @@ prepare_meergm_data <- function(net, group.data, form, verbose=FALSE)
     
     
     dta <- data.frame(dta)
-    nm <- c("Y", names(dta.array$predictor[tail, head, ]), "Group1", "Group2",
+    nm <- c("Y", names(dta.array$predictor[1, 2, ]), "Group1", "Group2",
             "Sociality1", "Sociality2")
     names(dta) <- nm
     
