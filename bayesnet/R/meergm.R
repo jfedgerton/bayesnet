@@ -1,4 +1,4 @@
-meergm <- function(formula.stage.1, formula.stage.2, group.data, net, chains = 4, warmup = 100, iter = 5000, cores = 2, seed = 12345, control = NULL)
+meergm <- function(formula.stage.1, formula.stage.2, group.data, net, chains = 4, warmup = 100, iter = 5000, cores = 2, seed = NULL, control = NULL)
 {
   require('ergm')
   require('dplyr')
@@ -129,6 +129,7 @@ meergm <- function(formula.stage.1, formula.stage.2, group.data, net, chains = 4
     }
     }"
     if(!is.null(seed)){
+      seed = 12345
       set.seed(seed)
       cat("Setting seed at the default value of 12345 for the seed argument.")
 } else {
