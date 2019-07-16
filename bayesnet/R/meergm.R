@@ -112,7 +112,7 @@ meergm <- function(formula.stage.1, formula.stage.2, group.data, net, chains = 4
     mu ~ normal(0,1);
     tau ~ gamma(0.001, 0.001);
     a ~ normal(mu,tau);
-    beta1 ~ normal(0, 1);
+    beta1 ~ normal(0, 0.1);
     beta2 ~ normal(0, 1);
     
     y ~ bernoulli_logit(phi);
@@ -131,10 +131,8 @@ meergm <- function(formula.stage.1, formula.stage.2, group.data, net, chains = 4
     if(is.null(seed)){
       seed = 12345
       set.seed(seed)
-      cat("Setting seed at the default value of 12345 for the seed argument.")
-} else {
-  warning("Note: This function relies simulation.  Consider specifying a seed to set to ensure replicability.")
-}
+      warning("Note: This function relies on simulation so seed was auto set to 12345.  Consider specifying a seed to set to ensure replicability.")
+    }
     stan.fit <- stan(model_code = scode,
                      data=stan.dta, chains=chains, warmup=warmup, iter=iter)
     
@@ -148,4 +146,4 @@ meergm <- function(formula.stage.1, formula.stage.2, group.data, net, chains = 4
       cat('Error in the group data.')
     }
   
-  }
+}
