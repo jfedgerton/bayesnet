@@ -141,12 +141,16 @@ create_group_data <- function(group.data, formula.stage.1)
           factor_list_output[[fact_vars]] <- dta.group.factor.temp.missing
         }
         
-        for (loop_fact in 2:length(factor_list_output))
+        if (length(factor_list_output) > 1)
         {
-          factor_list_output[[1]] <- merge(factor_list_output[[1]],
-                                      factor_list_output[[loop_fact]],
-                                      by = c("Group1", "Group2", "Group_ID", "ID_temp", "G1", "G2"))
+          for (loop_fact in 2:length(factor_list_output))
+          {
+            factor_list_output[[1]] <- merge(factor_list_output[[1]],
+                                             factor_list_output[[loop_fact]],
+                                             by = c("Group1", "Group2", "Group_ID", "ID_temp", "G1", "G2"))
+          }
         }
+        
         dta.group.merge.data <- dta.group[,grepl("nodefactor", colnames(dta.group)) == F]
         factor_list_output[[1]] <- merge(factor_list_output[[1]], 
                                          dta.group.merge.data, 
