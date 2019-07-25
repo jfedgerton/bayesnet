@@ -1,4 +1,4 @@
-meergm <- function(formula.stage.1, formula.stage.2, group.data, net, chains = 4, warmup = 100, iter = 5000, cores = 2, seed = NULL, control = NULL, algorithm = "NUTS")
+meergm <- function(formula.stage.1, formula.stage.2, group.data, net, thin = 1, chains = 4, warmup = 100, iter = 5000, cores = 2, seed = NULL, control = NULL, algorithm = "NUTS")
 {
   require('ergm')
   require('dplyr')
@@ -134,7 +134,7 @@ meergm <- function(formula.stage.1, formula.stage.2, group.data, net, chains = 4
       warning("Note: This function relies on simulation so seed was auto set to 12345.  Consider specifying a seed to set to ensure replicability.")
     }
     stan.fit <- stan(model_code = scode,
-                     data=stan.dta, chains=chains, warmup=warmup, iter=iter, algorithm = algorithm)
+                     data=stan.dta, thin=thin, chains=chains, warmup=warmup, iter=iter, algorithm = algorithm)
     
     stan.output = rstan::extract(stan.fit)
     var.names.stage1 <- names(u)
