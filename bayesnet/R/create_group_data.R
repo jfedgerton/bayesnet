@@ -64,9 +64,23 @@ create_group_data <- function(group.data, formula.stage.1)
       }
       ## Name the group data
       dta.group <- data.frame(dta.group)
-      nm.group <- c("Y", names(dta.array.group$predictor[tail.group, head.group, ]),
-                    "Group1", "Group2")
-      colnames(dta.group) <- nm.group
+      if (ncoef.group != 1)
+      {
+        nm.group <- c("Y", names(dta.array.group$predictor[tail.group, head.group, ]),
+                      "Group1", "Group2")
+        colnames(dta.group) <- nm.group  
+      } else 
+      {
+        var_name <- formula.stage.1
+        var_name <- gsub("\\(", "", var_name)
+        var_name <- gsub("\\)", "", var_name)
+        var_name <- gsub("'", "\\.", var_name)
+        var_name <- substr(var_name, 1, nchar(var_name) - 1)
+        nm.group <- c("Y", var_name,
+                      "Group1", "Group2")
+        colnames(dta.group) <- nm.group
+      }
+      
       
       ## Creating group data
       all_groups <- unique(c(dta.group$Group1,dta.group$Group2))
