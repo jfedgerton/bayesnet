@@ -49,7 +49,7 @@ meergm <- function(formula.stage.1, formula.stage.2, group.data, net, chains = 4
     ## Pull out the first stage variables
     first_stage_variables <- names(group.data)
     first_stage_variables <- first_stage_variables[!(first_stage_variables %in% c("Group1", "Group2", "intercept", "Group_ID"))]
-    u <- matrix(ties[,names(ties) %in% first_stage_variables], ncol = 1)
+    u <- matrix(ties[,names(ties) %in% first_stage_variables], ncol = length(first_stage_variables))
     
     ## Pull out the second stage variables
     second_stage_variables <- names(ties)
