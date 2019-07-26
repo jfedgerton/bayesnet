@@ -49,8 +49,17 @@ meergm <- function(formula.stage.1, formula.stage.2, group.data, net, thin = 1, 
     ## Pull out the first stage variables
     first_stage_variables <- names(group.data)
     first_stage_variables <- first_stage_variables[!(first_stage_variables %in% c("Group1", "Group2", "intercept", "Group_ID"))]
-    u <- data.frame(matrix(ties[,names(ties) %in% first_stage_variables], ncol = length(first_stage_variables)))
-    colnames(u) <- first_stage_variables
+    
+    if (length(first_stage_variables) > 1)
+    {
+      u <- ties[,names(ties) %in% first_stage_variables]
+      colnames(u) <- first_stage_variables
+    } else 
+    {
+      u <- data.frame(matrix(ties[,names(ties) %in% first_stage_variables], ncol = length(first_stage_variables)))
+      colnames(u) <- first_stage_variables  
+    }
+    
     ## Pull out the second stage variables
     second_stage_variables <- names(ties)
     second_stage_variables <- second_stage_variables[!(second_stage_variables %in% c(c("Y", "Sociality1", "Sociality2"), names(group.data)))]
