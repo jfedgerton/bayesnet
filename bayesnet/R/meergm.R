@@ -1,11 +1,11 @@
 meergm <- function(net, 
-                   form.stage.1 = "absdiff('SES')",
-                   form.stage.2 = "nodematch('Sex') + nodematch('Group') + triangle",
-                   group.data = net.sim[[2]],
+                   form.stage.1 = NULL,
+                   form.stage.2 = NULL,
+                   group.data = NULL,
                    parameterization = "standard",
                    options = set_options(),  
                    theta_init = NULL,
-                   verbose = 3,
+                   verbose = 0,
                    eval_loglik = TRUE,
                    seed = 123) {
   
