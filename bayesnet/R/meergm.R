@@ -175,18 +175,4 @@ meergm <- function(net,
   }
   return(estimates)
 }
-load("C:/Users/Jared/Dropbox/meergm/New simulation output/Test data/simulate_degree7_75_nodes.RData")
 
-system.time({test <- meergm(net = return.list[[32]]$net, 
-               form.stage.1 = "absdiff('SES')",
-               form.stage.2 = "nodematch('Sex') + nodematch('Group') + triangle",
-               group.data = return.list[[32]]$group.data,
-               parameterization = "standard",
-               options = set_options(interval = 2000),  
-               theta_init = NULL,
-               verbose = 3,
-               eval_loglik = TRUE,
-               seed = 123)})
-names(test$theta) <- colnames(sim_mat)
-names(test$se) <- colnames(sim_mat)
-names(test$pvalue) <- colnames(sim_mat)
