@@ -95,8 +95,8 @@ par_sim_fun <- function(obj, data, check_curve_form, form_mcmc, form_sim, form_n
             bglmer(form_sim,
                    data = sim_data,
                    family = binomial,
-                   cov.prior = wishart,
-                   fixef.prior = normal(sd = c(10, 10)))
+                   cov.prior = NULL,
+                   fixef.prior = t())
           }, silent = T)))
           
           if(class(cur_theta_temp) != "try-error")

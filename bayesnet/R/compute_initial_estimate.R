@@ -9,8 +9,8 @@ compute_initial_estimate <- function(obj, form_sim, data) {
     init <- suppressMessages(
       bglmer(form_sim,  data,
             family = binomial,
-            cov.prior = wishart,
-            fixef.prior = normal(sd = c(10, 10)))
+            #cov.prior = NULL,
+            fixef.prior = t())
     )
     check_fe <- apply(coef(init)$Group_ID, 2, sd) == 0
     re_var <- names(check_fe)[check_fe == F]
