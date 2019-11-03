@@ -110,10 +110,10 @@ create_group_data <- function(group.data, formula.stage.1)
       dta.group <- dplyr::mutate(dta.group, intercept = 1)
       dta.group$Group_ID <- 1:nrow(dta.group)
       
-      Grp <- to_indicator(dta.group[,c("Group1", "Group2", "Group_ID")], "Group")
-      dta.group[, "Group1"] <- Grp[,1]
-      dta.group[, "Group2"] <- Grp[,2]
-      dta.group[, "Group_ID"] <- Grp[,3]
+      #Grp <- to_indicator(dta.group[,c("Group1", "Group2", "Group_ID")], "Group")
+      #dta.group[, "Group1"] <- Grp[,1]
+      #dta.group[, "Group2"] <- Grp[,2]
+      #dta.group[, "Group_ID"] <- Grp[,3]
       
       
       if (sum(grepl("nodefactor", formula.stage.1)) > 0)

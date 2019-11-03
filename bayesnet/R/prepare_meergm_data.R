@@ -11,7 +11,7 @@ prepare_meergm_data <- function(net, group.data, form, verbose=FALSE)
     dta.array <- ergm::ergmMPLE(form, output="array", maxMPLEsamplesize=+Inf,
                                 control=ergm::control.ergm(MPLE.max.dyad.types=ndyads*10))
     
-    if (isTRUE(verbose)) cat("\n##   building data.frame...")
+    if (verbose > 0) cat("\n##   building data.frame...")
     ncoef <- length(dta.array$predictor[1,2,])
     dta <- matrix(0, nrow=ndyads, ncol=5+ncoef)
     group <- ergm::get.node.attr(net,"Group")
@@ -37,15 +37,15 @@ prepare_meergm_data <- function(net, group.data, form, verbose=FALSE)
     if (isTRUE(verbose)) cat("\n##   setting group effects indicators...\n")
     
 
-      Soc <- to_indicator(dta[,c("Sociality1", "Sociality2")], "Node")
-      Grp <- to_indicator(dta[,c("Group1", "Group2")], "Group")
-      dta[, "Sociality1"] <- Soc[,1]
-      dta[, "Sociality2"] <- Soc[,2]
-      dta[, "Group1"] <- Grp[,1]
-      dta[, "Group2"] <- Grp[,2]
+      #Soc <- to_indicator(dta[,c("Sociality1", "Sociality2")], "Node")
+      #Grp <- to_indicator(dta[,c("Group1", "Group2")], "Group")
+      #dta[, "Sociality1"] <- Soc[,1]
+      #dta[, "Sociality2"] <- Soc[,2]
+      #dta[, "Group1"] <- Grp[,1]
+      #dta[, "Group2"] <- Grp[,2]
   
   } else {
-    if (isTRUE(verbose)) cat("\n## Preparing MEERGM dataset...")
+    if (verbose > 0) cat("\n## Preparing MEERGM dataset...")
     nodes <- nrow(as.matrix(net))
     ndyads <- network::network.dyadcount(net)
     form <- stats::as.formula(paste("net ~", form))
@@ -98,12 +98,12 @@ prepare_meergm_data <- function(net, group.data, form, verbose=FALSE)
     }
     dta <- arrange(dta, Sociality1, Sociality2, Group1, Group2)
     if (isTRUE(verbose)) cat("\n##   setting random effects indicators...\n")
-    Soc <- to_indicator(dta[,c("Sociality1", "Sociality2")], "Node")
-    Grp <- to_indicator(dta[,c("Group1", "Group2")], "Group")
-    dta[, "Sociality1"] <- Soc[,1]
-    dta[, "Sociality2"] <- Soc[,2]
-    dta[, "Group1"] <- Grp[,1]
-    dta[, "Group2"] <- Grp[,2]
+    #Soc <- to_indicator(dta[,c("Sociality1", "Sociality2")], "Node")
+    #Grp <- to_indicator(dta[,c("Group1", "Group2")], "Group")
+    #dta[, "Sociality1"] <- Soc[,1]
+    #dta[, "Sociality2"] <- Soc[,2]
+    #dta[, "Group1"] <- Grp[,1]
+    #dta[, "Group2"] <- Grp[,2]
     
   }
   

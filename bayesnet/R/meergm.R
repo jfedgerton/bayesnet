@@ -1,158 +1,192 @@
-meergm <- function(formula.stage.1, formula.stage.2, group.data, net, thin = 1, chains = 4, warmup = 100, iter = 5000, cores = 2, seed = NULL, control = NULL, algorithm = "NUTS")
-{
-  require('ergm')
-  require('dplyr')
-  require('fergm')
-  require('rstan')
+meergm <- function(net, 
+                   form.stage.1 = "absdiff('SES')",
+                   form.stage.2 = "nodematch('Sex') + nodematch('Group') + triangle",
+                   group.data = net.sim[[2]],
+                   parameterization = "standard",
+                   options = set_options(),  
+                   theta_init = NULL,
+                   verbose = 3,
+                   eval_loglik = TRUE,
+                   seed = 123) {
   
-  
-  if (grepl("gwesp", formula.stage.2) == T){
-    warning("Curved spaced parameters may be biased.")
-  }
-  
-  
-  group.data <- create_group_data(group.data = group.data, formula.stage.1 = formula.stage.1)
-  
-  if ("Group1" %in% colnames(group.data))
+  require('plyr')
+  require('blme')
+  require('stringr')
+  require('parallel')
+  net <<- net
+  if (grepl("gwesp|gwidegree|gwodegreegwesp", form.stage.2))
   {
-    ties <- prepare_meergm_data(net = net, group.data = group.data, form = formula.stage.2)
-    ties$Group1 <- factor(ties$Group1)
-    ties$Group2 <- factor(ties$Group2)
-    group.data$Group1   <- factor(group.data$Group1)
-    group.data$Group2   <- factor(group.data$Group2)
-    group.data$Group_ID <- factor(group.data$Group_ID)
-    
-    ties$Group1 <- as.character(ties$Group1)
-    ties$Group2 <- as.character(ties$Group2)
-    group.data$Group1 <- as.character(group.data$Group1)
-    group.data$Group2 <- as.character(group.data$Group2)
-    group.data$Group_ID <- as.character(group.data$Group_ID)
-    
-    temp_gr <- group.data
-    temp_gr$Group1 <- group.data$Group2
-    temp_gr$Group2 <- group.data$Group1
-    
-    ties_temp <- dplyr::bind_rows(group.data, temp_gr)
-    ties_temp <-   dplyr::distinct(ties_temp,
-                                   Group1, Group2, Group_ID, .keep_all = T)
-    ties_temp <- right_join(ties_temp, ties, by = c("Group1", "Group2"))
-    ties_temp <- dplyr::arrange(ties_temp, Group_ID)
-    
-    if (nrow(ties_temp) == nrow(ties))
-    {
-      ties = ties_temp
-    } else
-    {
-      cat("Error in group identification.")
-    }
-    cat("Starting data preparation")
-    ## Pull out the first stage variables
-    first_stage_variables <- names(group.data)
-    first_stage_variables <- first_stage_variables[!(first_stage_variables %in% c("Group1", "Group2", "intercept", "Group_ID"))]
-    
-    if (length(first_stage_variables) > 1)
-    {
-      u <- ties[,names(ties) %in% first_stage_variables]
-      colnames(u) <- first_stage_variables
-    } else 
-    {
-      u <- data.frame(matrix(ties[,names(ties) %in% first_stage_variables], ncol = length(first_stage_variables)))
-      colnames(u) <- first_stage_variables  
-    }
-    
-    ## Pull out the second stage variables
-    second_stage_variables <- names(ties)
-    second_stage_variables <- second_stage_variables[!(second_stage_variables %in% c(c("Y", "Sociality1", "Sociality2"), names(group.data)))]
-    x <- ties[,names(ties) %in% second_stage_variables]
-    
-    for (convert_to_numeric in 1:ncol(x))
-    {
-      x[,convert_to_numeric] <- as.numeric(as.character(x[,convert_to_numeric]))
-    }
-    
-    for (u_convert_to_numeric in 1:ncol(u))
-    {
-      u[,u_convert_to_numeric] <- as.numeric(as.character(u[,u_convert_to_numeric]))
-    }
-    
-    g.idx <- as.numeric(as.factor(ties$Group_ID))
-    y <- as.numeric(as.character(ties[,"Y"]))
-    group.id <- unique(cbind(g.idx, ties$Group_ID))
-    stan.dta  <- list(L1 = ncol(u),
-                      L2 = ncol(x),
-                      GD = nrow(group.data),
-                      D = nrow(x),
-                      group = g.idx,
-                      u = u,
-                      x = x,
-                      y = y)
-    stan.dta$x <- as.matrix(stan.dta$x)
-    
-    rstan_options(auto_write = TRUE)
-    options(mc.cores = cores)
-    
-    # fit the model using STAN
-    scode <- "data {
-    int<lower=1> L1;		// number of level 1 predictors
-    int<lower=1> L2;		// number of level 2 predictors
-    int<lower=1> GD;		// number of node group pairs
-    int<lower=0> D;		// number of potential ties
-    int<lower=1, upper=GD> group[D]; // numerical indicator of edge group (group_ID)
-    row_vector[L1] u[D];		// level 1 predictors
-    row_vector[L2] x[D];		// level 2 predictors
-    int<lower=0,upper=1> y[D];	// ties (outcome)
+    cat("Fixed effects are only supported at this time for curved space parameters.\n")
   }
-    parameters {
-    real<lower=0> tau;		// sociality dispersion
-    vector[GD] a;       // separate edge group intercepts
-    real mu;            // group population intercept
-    vector[L1] beta1;		// L1 predictor coefficients
-    vector[L2] beta2;		// L2 predictor coefficients
-    }
-    transformed parameters{
-    vector[D] phi; // container for linear predictor
-    vector[D] alpha; // container for linear predictor
-    for (i in 1:D) {
-    alpha[i] = a[group[i]] + dot_product(beta1, u[i]);
-    phi[i] = dot_product(beta2, x[i]) + 0.5 * (alpha[i]);
-    }
-    }
-    model {
-    mu ~ normal(0,1);
-    tau ~ gamma(0.0001, 0.0001);
-    a ~ normal(mu,tau);
-    beta1 ~ normal(0, 0.5);
-    beta2 ~ normal(0, 1);
-    
-    y ~ bernoulli_logit(phi);
-    }
-    generated quantities {
-    vector[D] predictions;
-    for (i in 1:D) {
-    predictions[i] = bernoulli_rng(
-    inv_logit(
-    dot_product(beta2, x[i]) + 0.5 * normal_rng( a[group[i]] +
-    dot_product(beta1, u[i]),tau)
-    )
-    );
-    }
-    }"
-    if(is.null(seed)){
-      seed = 12345
-      set.seed(seed)
-      warning("Note: This function relies on simulation so seed was auto set to 12345.  Consider specifying a seed to set to ensure replicability.")
-    }
-    stan.fit <- stan(model_code = scode,
-                     data=stan.dta, thin=thin, chains=chains, warmup=warmup, iter=iter, algorithm = algorithm)
-    
-    stan.output = rstan::extract(stan.fit)
-    var.names.stage1 <- names(u)
-    colnames(stan.output$beta1) <- var.names.stage1
-    var.names.stage2 <- names(x)
-    colnames(stan.output$beta2) <- var.names.stage2
-    return(list(stan.fit = stan.fit, stan.output = stan.output, network.group.data = group.data, stan.dta = stan.dta, group.id = group.id, form.stage.1 = formula.stage.1, form.stage.2 = formula.stage.2))
-    } else{
-      cat('Error in the group data.')
-    }
   
+  group_data <- create_group_data(group.data = group.data, formula.stage.1 = form.stage.1)
+  group_data2 <- group_data
+  group_data2$Group1 <- group_data$Group2
+  group_data2$Group2 <- group_data$Group1
+  group_data <- rbind(group_data, 
+                      group_data2)
+  group_data <- distinct(group_data, Group1, Group2, Group_ID, .keep_all = T)
+  model_data <- prepare_meergm_data(net = net, group.data = group_data, form = form.stage.2)
+  hierarchical_data <- merge(group_data,
+                             model_data, 
+                             by = c("Group1", "Group2"))
+  
+  hierarchical_data <- arrange(hierarchical_data, 
+                               Sociality1, Sociality2)
+  # If a seed is provided, set it
+  if (!is.null(seed)) { 
+    check_integer(seed, "seed")
+    set.seed(seed, "L'Ecuyer")
+  } 
+  node_memb <- get.vertex.attribute(net, "Group")
+    
+  
+  
+  # Adjust formula if necessary 
+  form_mple        <- adjust_formula_mple(form = form.stage.2, form.stage.1 = form.stage.1) 
+  form_sim         <- adjust_formula_sim(data = hierarchical_data, form_ref = form_mple)
+  form_net         <- adjust_formula_net(form = form.stage.2, form.stage.1 = form.stage.1) 
+  form_mcmc        <- adjust_formula_sim_net(form = form.stage.2, form.stage.1 = form.stage.1)
+  check_curve_form <- adjust_formula_curve(form = form.stage.2, form.stage.1 = form.stage.1)
+  # Parse formula to get network and model
+  
+ 
+  # Initialize object
+  obj <- initialize_object(net = net, 
+                           theta_init = theta_init,
+                           sim_param = options$sim_param,
+                           est_param = options$est_param,
+                           verbose = verbose,
+                           parameterization = parameterization,
+                           form_mple = form_mple,
+                           check_curve_form = check_curve_form)
+  
+  # Remove objects that are no longer needed 
+  rm(options)
+  
+  # Initialize estimate if an initial estimate is not provided 
+  cd_flag <- TRUE
+  if (is.null(obj$est$theta)) {
+    if (verbose > 0) { 
+      cat("\n\nComputing initial estimate.")  
+    }
+    
+    
+      obj$est$theta <- numeric(length(obj$net$theta_names)) 
+      obj <- compute_initial_estimate(obj, form_sim = form_sim, data =  hierarchical_data)
+    
+    if (verbose > 0) {
+      cat("\n    Initial fixed effect estimate:")
+      cat(paste("\n     ", names(obj$est$theta), " = ", formatC(obj$est$theta, digits = 4, format = "f")))
+    }
+  } else { 
+    obj$est$theta <- theta_init
+  }
+  
+  
+  
+  # Call MCMLE to perform estimation
+  if (verbose > 0) { 
+    cat("\n\n\nBegining Monte-Carlo maximum likelihood estimation\n")
+    cat("===================================================")
+    cat("\n")
+  }
+  obj$hierarchical_data <- hierarchical_data
+  obj$check_curve_form <- check_curve_form
+  obj$form_mcmc <- form_mcmc
+  obj$form_sim <- form_sim
+  obj$form_net <- form_net
+  obj <- MCMLE(obj)
+  
+  # Estimate the between block model (if possible)
+  
+  # Evalaute results of MCMLE procedure 
+  if (verbose > 0 & !obj$est$ML_status_fail) {
+    cat(paste0("\n\nComputing approximate loglikelihood at estimate using ", 
+               obj$est$bridge_num, " bridges."))
+    cat("\n\n")
+    
+  } else if (verbose > 0 & obj$est$ML_status_fail) {
+    cat("\n\nEstimation procedure stopping. Estimation unsuccesful.\n\n", call. = FALSE)
+  }
+  
+  
+  # Make structure to be returned
+  if (!obj$est$ML_status_fail) {
+    if (obj$est$inCH_counter > 0) {
+      obj <- compute_pvalue(obj)
+      ## Start here
+      if (eval_loglik) { 
+        obj$likval <- lik_fun(form = form_net, theta = obj$est$theta, 
+                              bridge_num = obj$est$bridge_num, ncores = obj$est$par_n_cores,
+                              form_net = obj$form_net,
+                              offset = obj$est$parameterization == "offset",
+                              burnin = obj$sim$bridge_burnin, 
+                              interval = obj$sim$bridge_interval, 
+                              sample_size = obj$sim$bridge_sample_size) 
+        obj$bic <- compute_bic(obj) 
+      } else { 
+        obj$likval <- NULL
+        obj$bic <- NULL
+      }
+      mcmc_path <- obj$sim$stats
+      names(obj$se) <- colnames(obj$sim$stats)
+      names(obj$pvalue) <- colnames(obj$sim$stats)
+      names(obj$est$theta) <- colnames(obj$sim$stats)
+      theta_values <- as.vector(obj$est$theta)
+      names(theta_values) <- colnames(obj$sim$stats)
+      estimates <- list(theta = theta_values,
+                        se = obj$se,
+                        pvalue = obj$pvalue, 
+                        bic = obj$bic, 
+                        logLikval = obj$likval,  
+                        mcmc_chain = mcmc_path,
+                        estimation_status = "success",
+                        parameterization = obj$est$parameterization,
+                        formula = form_net,
+                        network = net, 
+                        mple.estmate = obj$est$chat,
+                        btw.var = obj$est$btw.var)
+      class(estimates) <- "meergm" 
+      rm(mcmc_path); clean_mem()
+    } else if (obj$est$inCH_counter == 0) { 
+      cat("\n\nWarning: Maximum number of iterations reached without the observation lying in the")
+      cat(" interior of the simulated convex hull. Parameters not estimated.\n\n")
+      estimates <- list(theta = NA,
+                        se = NA,
+                        formula = form_net, 
+                        network = net,
+                        mcmc_chain = NULL,
+                        estimation_status = "failed")
+      class(estimates) <- "meergm"
+    }
+  } else {
+    estimates <- list(theta = NA, 
+                      se = NA,
+                      formula = form_net, 
+                      network = net, 
+                      mcmc_chain = NULL,
+                      estimation_status = "failed")
+    class(estimates) <- "meergm" 
+  }
+  
+  if (verbose > 0) { 
+    summary(estimates) 
+  }
+  return(estimates)
 }
+load("C:/Users/Jared/Dropbox/meergm/New simulation output/Test data/simulate_degree7_75_nodes.RData")
+
+system.time({test <- meergm(net = return.list[[32]]$net, 
+               form.stage.1 = "absdiff('SES')",
+               form.stage.2 = "nodematch('Sex') + nodematch('Group') + triangle",
+               group.data = return.list[[32]]$group.data,
+               parameterization = "standard",
+               options = set_options(interval = 2000),  
+               theta_init = NULL,
+               verbose = 3,
+               eval_loglik = TRUE,
+               seed = 123)})
+names(test$theta) <- colnames(sim_mat)
+names(test$se) <- colnames(sim_mat)
+names(test$pvalue) <- colnames(sim_mat)
