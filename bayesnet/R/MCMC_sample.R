@@ -24,7 +24,6 @@ MCMC_sample_par <- function(obj) {
   for (check_vars in 1:(ncol(f.test.data) - 1))
   {
     var_test <- f.test.data[,check_vars]
-    f.test.check[check_vars] <- summary(aov(var_test ~ f.test.data$chain))[[1]][["Pr(>F)"]][1]
   }
   
   if (min(f.test.check) < 0.05)
@@ -184,7 +183,7 @@ par_sim_fun <- function(obj, chain_var) {
       # Impute observed sufficient statistics if missing data
       obs_ <- summary(obj$form_net)
         
-      if (is.curved(form_net)) {
+      if (is.curved(obj$form_net)) {
         for (cur_t in 1:num_curved) { 
           curved_ind_ <- obj$net$model$etamap$curved[[cur_t]]$to
           cur_curved_ind_ <- mod_temp$etamap$curved[[cur_t]]$to
