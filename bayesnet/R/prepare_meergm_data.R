@@ -5,6 +5,7 @@ prepare_meergm_data <- function(net, group.data, form, verbose=FALSE)
     if (isTRUE(verbose)) cat("\n## Preparing MEERGM dataset...")
     nodes <- nrow(as.matrix(net))
     ndyads <- network::network.dyadcount(net)
+    form_temp = form
     form <- stats::as.formula(paste("net ~", form))
     
     if (isTRUE(verbose)) cat("\n##   building array...")
@@ -32,6 +33,12 @@ prepare_meergm_data <- function(net, group.data, form, verbose=FALSE)
     dta <- data.frame(dta)
     nm <- c("Y", names(dta.array$predictor[tail, head, ]), "Group1", "Group2",
             "Sociality1", "Sociality2")
+    
+    if (sum(is.null(names(dta.array$predictor[tail, head, ]))) > 0)
+    {
+      nm <- c("Y", form_temp, "Group1", "Group2",
+              "Sociality1", "Sociality2")
+    }
     names(dta) <- nm
     
     if (isTRUE(verbose)) cat("\n##   setting group effects indicators...\n")
@@ -90,6 +97,14 @@ prepare_meergm_data <- function(net, group.data, form, verbose=FALSE)
     dta <- data.frame(dta)
     nm <- c("Y", names(dta.array$predictor[1, 2, ]), "Group1", "Group2",
             "Sociality1", "Sociality2")
+    
+    if (sum(is.null(names(dta.array$predictor[tail, head, ]))) > 0)
+    {
+      nm <- c("Y", form_temp, "Group1", "Group2",
+              "Sociality1", "Sociality2")
+    }
+    names(dta) <- nm
+    
     names(dta) <- nm
     
     for (dta_cols in 1:ncol(dta))
