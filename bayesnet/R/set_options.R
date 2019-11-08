@@ -1,5 +1,5 @@
 set_options <- function(burnin = 100,
-                        interval = 1000,
+                        interval = 1500,
                         sample_size = 2000,
                         NR_tol = 1e-4,
                         NR_max_iter = 50,
