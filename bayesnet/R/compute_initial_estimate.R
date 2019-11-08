@@ -1,4 +1,4 @@
-compute_initial_estimate <- function(obj, form_sim, data) {
+compute_initial_estimate <- function(obj) {
   
   # Find the initial point for a non-curved ERGM 
   
@@ -7,16 +7,16 @@ compute_initial_estimate <- function(obj, form_sim, data) {
            call. = FALSE) 
     }
     init <- suppressMessages(
-      bglmer(form_sim,  data,
+      bglmer(obj$form_sim,  obj$hierarchical_data,
             family = binomial,
             cov.prior = NULL,
             fixef.prior = t())
     )
-    check_fe <- apply(coef(init)$Group_ID, 2, sd) == 0
-    re_var <- names(check_fe)[check_fe == F]
+    re_name <- names(apply(coef(init)$Group_ID, 2, sd)[names(coef(init)$Group_ID) == "(Intercept)"])
+    fe_name <- names(apply(coef(init)$Group_ID, 2, sd)[names(coef(init)$Group_ID) != "(Intercept)"])
     theta <- fixef(init)
-    theta <- theta[names(theta) != re_var]
-    extract_re <- t(coef(init)$Group_ID[names(coef(init)$Group_ID) == re_var])
+    theta <- theta[names(theta) != re_name]
+    extract_re <- t(coef(init)$Group_ID[names(coef(init)$Group_ID) == re_name])
     row.names(extract_re) <- NULL
     names(extract_re) <- row.names(coef(init)$Group_ID)
     obj$est$theta_wg <- c(extract_re, theta)

@@ -63,6 +63,13 @@ meergm <- function(net,
                            form_mple = form_mple,
                            check_curve_form = check_curve_form)
   obj$group.count <- group.count
+  obj$hierarchical_data <- hierarchical_data
+  obj$check_curve_form <- check_curve_form
+  obj$form_mcmc <- form_mcmc
+  obj$form_sim <- form_sim
+  obj$form_net <- form_net
+  obj$form_re <- form_re
+  obj$chains <- chains
   # Remove objects that are no longer needed 
   rm(options)
   
@@ -75,7 +82,7 @@ meergm <- function(net,
     
     
       obj$est$theta <- numeric(length(obj$net$theta_names)) 
-      obj <- compute_initial_estimate(obj, form_sim = form_sim, data =  hierarchical_data)
+      obj <- compute_initial_estimate(obj)
     
     if (verbose > 0) {
       cat("\n    Initial fixed effect estimate:")
