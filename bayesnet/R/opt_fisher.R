@@ -144,7 +144,7 @@ opt_fisher <- function(obj) {
 comp_weights <- function(obj) {
   
   weights <- list(rep(numeric(obj$sim$num_obs)))
-  
+  obj$sim$stats <- as.matrix(obj$sim$stats)
   theta_diff <- obj$est$theta - obj$est$theta_0
   adjust_flag <- FALSE
   if (any(is.na(obj$sim$stats %*% theta_diff))) { 
@@ -340,3 +340,4 @@ check_convergence <- function(obj, step) {
   }
   return(obj)
 }
+

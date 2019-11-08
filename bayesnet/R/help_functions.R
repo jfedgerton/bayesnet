@@ -603,6 +603,34 @@ adjust_formula_sim_net <- function(form, form.stage.1) {
   return(form)
 }
 
+adjust_formula_sim_net_re <- function(form, form.stage.1) {
+  all_vars <- str_trim(str_split(as.character(form), "\\+")[[1]])
+  
+  # Check if gw* terms are included without modifier
+  if (any(grepl("gwesp", all_vars))) {
+    location <- which(grepl("gwesp", all_vars))
+    all_vars[location] <- "gwesp(fixed = T)"
+  }
+  if (any(grepl("gwodegree", all_vars))) { 
+    location <- which(grepl("gwodegree", all_vars))
+    all_vars[location] <- "gwodegree(fixed = T)"
+  }
+  if (any(grepl("gwidegree", all_vars))) { 
+    location <- which(grepl("gwidegree", all_vars))
+    all_vars[location] <- "gwidegree(fixed = T)"
+  }
+  if (any(grepl("gwdegree", all_vars))) { 
+    location <- which(grepl("gwdegree", all_vars))
+    all_vars[location] <- "gwdegree(fixed = T)"
+  }
+  
+  # Put all the pieces back together
+  right_side_change <- paste("~ nodemix('Group') +", paste0(all_vars, collapse = " + "))
+  form <- as.formula(paste0("simulated_network", right_side_change, "+", form.stage.1))
+  
+  return(form)
+}
+
 adjust_formula_curve <- function(form, form.stage.1) {
   all_vars <- str_trim(str_split(as.character(form), "\\+")[[1]])
   

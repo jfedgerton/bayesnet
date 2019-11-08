@@ -6,6 +6,7 @@ meergm <- function(net,
                    options = set_options(),  
                    theta_init = NULL,
                    verbose = 0,
+                   chains = 4,
                    eval_loglik = TRUE,
                    seed = 123) {
   
@@ -39,7 +40,7 @@ meergm <- function(net,
     set.seed(seed, "L'Ecuyer")
   } 
   node_memb <- get.vertex.attribute(net, "Group")
-    
+  group.count <- length(unique(node_memb))  
   
   
   # Adjust formula if necessary 
@@ -47,6 +48,7 @@ meergm <- function(net,
   form_sim         <- adjust_formula_sim(data = hierarchical_data, form_ref = form_mple)
   form_net         <- adjust_formula_net(form = form.stage.2, form.stage.1 = form.stage.1) 
   form_mcmc        <- adjust_formula_sim_net(form = form.stage.2, form.stage.1 = form.stage.1)
+  form_re          <- adjust_formula_sim_net_re(form = form.stage.2, form.stage.1 = form.stage.1)
   check_curve_form <- adjust_formula_curve(form = form.stage.2, form.stage.1 = form.stage.1)
   # Parse formula to get network and model
   
@@ -60,7 +62,7 @@ meergm <- function(net,
                            parameterization = parameterization,
                            form_mple = form_mple,
                            check_curve_form = check_curve_form)
-  
+  obj$group.count <- group.count
   # Remove objects that are no longer needed 
   rm(options)
   
@@ -96,6 +98,8 @@ meergm <- function(net,
   obj$form_mcmc <- form_mcmc
   obj$form_sim <- form_sim
   obj$form_net <- form_net
+  obj$form_re <- form_re
+  obj$chains <- chains
   obj <- MCMLE(obj)
   
   # Estimate the between block model (if possible)

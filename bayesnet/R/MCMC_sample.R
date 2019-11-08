@@ -1,30 +1,63 @@
 MCMC_sample_par <- function(obj) {
   
   
+  obj$vertex_data <- node_data(net = obj$net$net)
+  sim_stats <- list()
+  chains = obj$chains
+  for (num_chains in 1:chains)
+  {
+    sim_stats[[num_chains]] <- par_sim_fun(obj = obj, chain_var = num_chains)  
+  }
+  
+  f.test.data <- list()
+  for (num_chains in 1:chains)
+  {
+    f.data.temp <- data.frame(sim_stats[[num_chains]]$stat_matrix)
+    f.data.temp <- f.data.temp[(round(0.05*nrow(f.data.temp))):nrow(f.data.temp),]
+    f.data.temp$chain <- num_chains
+    f.test.data[[num_chains]] <- f.data.temp
+  }
+  
+  f.test.data <- do.call(bind_rows, f.test.data)
+  f.test.data$chain <- as.factor(f.test.data$chain)
+  f.test.check <- c()
+  for (check_vars in 1:(ncol(f.test.data) - 1))
+  {
+    var_test <- f.test.data[,check_vars]
+    f.test.check[check_vars] <- summary(aov(var_test ~ f.test.data$chain))[[1]][["Pr(>F)"]][1]
+  }
+  
+  if (min(f.test.check) < 0.05)
+  {
+    stop("Chains did not mix. Increase intervals and burnin.")
+  } else {
+    stat_matrix_all <- list()
+    stat_random_all  <- list()
+    for (check_data in 1:length(sim_stats))
+    {
+      stat_matrix_all[[check_data]] <- data.frame(sim_stats[[check_data]]$stat_matrix)
+      stat_random_all[[check_data]]  <- data.frame(sim_stats[[check_data]]$sim_random)
+    }
+    
+  }
   
   
-  sim_stats <- par_sim_fun(obj = obj, 
-                           data = obj$hierarchical_data, 
-                           check_curve_form = obj$check_curve_form, 
-                           form_mcmc = obj$form_mcmc, 
-                           form_sim = obj$form_sim,
-                           form_net = obj$form_net,
-                           net = net)
-  obj$sim$stats <- sim_stats$stat_matrix
-  obj$net$obs_stats <- sim_stats$obs_stats
+  obj$sim$stats <- do.call(bind_rows, stat_matrix_all)
+  obj$sim$re_stats <- do.call(bind_rows, stat_random_all)
+  obj$net$obs_stats <- sim_stats[[1]]$obs_stats
   return(obj)
 }
 
 
-par_sim_fun <- function(obj, data, check_curve_form, form_mcmc, form_sim, form_net, net) {
+par_sim_fun <- function(obj, chain_var) {
   require(tidygraph)
   
   # Setup net and formula for ergm::simulate simulation
   cur_theta <- obj$est$chat
-    
+  vertex_df <- obj$vertex_data
     #stat_matrix <- matrix(0, nrow = obj$sim$num_obs,
      #                     ncol = obj$net$num_terms)
-    vertex_df <- node_data(net = net)
+    
     
     if (sum(colnames(vertex_df) == "names") > 1)
     {
@@ -34,22 +67,23 @@ par_sim_fun <- function(obj, data, check_curve_form, form_mcmc, form_sim, form_n
       vertex_df <- data.frame(name_data, vertex_df)
     }
     
-    sim_data = data 
-    sim_output <- matrix(NA, ncol = ncol(obj$sim$stats), nrow = (obj$sim$burnin + obj$sim$interval))  
-    
+    sim_data = obj$hierarchical_data 
+    sim_output <- matrix(NA, ncol = length(fixef(obj$est$chat)), nrow = (obj$sim$burnin + obj$sim$interval))  
+    sim_random <- matrix(NA, ncol = (length(fixef(obj$est$chat)) + choose(obj$group.count, 2) + obj$group.count - 1), nrow = (obj$sim$burnin + obj$sim$interval))  
     # Simulate sufficient statistics
-    
+    cat("\n\n")
+    cat(paste0("Chain ", chain_var, ":\n"))
     sing.check = F
-    pct_complete <- round(seq(0.01, 0.99, 0.01)*(obj$sim$burnin + obj$sim$interval))
+    pct_complete <- round(seq(0.02, 1, 0.02)*(obj$sim$burnin + obj$sim$interval))
     sim_data_loop  <- 1
     repeat
     {
       if (sim_data_loop == 1)
       {
-        cat(paste0(cat("\n",rep("*", round(sim_data_loop/(obj$sim$burnin + obj$sim$interval), 2)*100), sep = ""), "|", round(sim_data_loop/(obj$sim$burnin + obj$sim$interval), 2)*100, "%"), "\r")
+        cat(paste0(cat("\n",rep("*", round(sim_data_loop/(obj$sim$burnin + obj$sim$interval), 2)*100), sep = ""), "|", round(sim_data_loop/(obj$sim$burnin + obj$sim$interval), 2)*100, "%"),  "\r")
         flush.console()
       } else if (sim_data_loop %in% pct_complete){
-        cat(paste0(cat(rep("*", round(sim_data_loop/(obj$sim$burnin + obj$sim$interval), 2)*100), sep = ""), "|", round(sim_data_loop/(obj$sim$burnin + obj$sim$interval), 2)*100, "%"), "\r")
+        cat(paste0(cat(rep("*", round(sim_data_loop/(obj$sim$burnin + obj$sim$interval), 2)*50), sep = ""), "|", round(sim_data_loop/(obj$sim$burnin + obj$sim$interval), 2)*100, "%"), "\r")
         flush.console()
       }
       sing.check = F
@@ -80,19 +114,20 @@ par_sim_fun <- function(obj, data, check_curve_form, form_mcmc, form_sim, form_n
           colnames(node_ties)[colnames(node_ties) == "Sociality1"] <- "from"
           colnames(node_ties)[colnames(node_ties) == "Sociality2"] <- "to"
           
-          simulated_network <- tbl_graph(nodes = node_names, edges = node_ties, directed = is.directed(net)) 
+          simulated_network <- tbl_graph(nodes = node_names, edges = node_ties, directed = is.directed(obj$net$net)) 
           
           suppressMessages(simulated_network %>%
                              activate(nodes) %>%
                              inner_join(vertex_df) %>%
                              intergraph::asNetwork(.) ->> simulated_network)
           
-          sim_output[sim_data_loop,] <- summary(form_mcmc) 
+          sim_output[sim_data_loop,] <- summary(obj$form_mcmc) 
+          sim_random[sim_data_loop,] <- summary(obj$form_re) 
           
           sim_data$Y <- tie_pred 
           
           suppressWarnings(cur_theta_temp <<- suppressMessages(try({
-            bglmer(form_sim,
+            bglmer(obj$form_sim,
                    data = sim_data,
                    family = binomial,
                    cov.prior = NULL,
@@ -113,21 +148,21 @@ par_sim_fun <- function(obj, data, check_curve_form, form_mcmc, form_sim, form_n
              }
           }
         }
-      if (iter == 10)
+      if (iter == 20)
       {
         break
       }
     }
     rm(cur_theta)
     rm(simulated_network)
-    if (iter == 10)
+    if (iter == 20)
     {
       stop(paste0("The MCMC failed to mix"))
     } else {
       sim_output <- sim_output[-c(1:obj$sim$burnin),]
       colnames(sim_output) <- names(summary(form_mcmc))
       stat_matrix = sim_output
-      if (is.curved(form_net)) {
+      if (is.curved(obj$form_net)) {
         num_curved <- sum(obj$net$model$etamap$canonical == 0) / 2
         mod_temp <- ergm_model(form, cur_net)
         cur_curved_ind <- numeric(0)
@@ -164,6 +199,6 @@ par_sim_fun <- function(obj, data, check_curve_form, form_mcmc, form_sim, form_n
       }
     }
     
-    stat_list <- list(stat_matrix = as.matrix(stat_matrix), obs_stats = obs_)
+    stat_list <- list(stat_matrix = as.matrix(stat_matrix), sim_random = sim_random, obs_stats = obs_)
     return(stat_list)
 }

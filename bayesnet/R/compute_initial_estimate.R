@@ -10,7 +10,7 @@ compute_initial_estimate <- function(obj, form_sim, data) {
       bglmer(form_sim,  data,
             family = binomial,
             cov.prior = NULL,
-            fixef.prior = normal(sd = c(0.025, 0.025)))
+            fixef.prior = t())
     )
     check_fe <- apply(coef(init)$Group_ID, 2, sd) == 0
     re_var <- names(check_fe)[check_fe == F]
