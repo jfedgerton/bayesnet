@@ -160,7 +160,7 @@ par_sim_fun <- function(obj, chain_var) {
       stop(paste0("The MCMC failed to mix"))
     } else {
       sim_output <- sim_output[-c(1:obj$sim$burnin),]
-      colnames(sim_output) <- names(summary(form_mcmc))
+      colnames(sim_output) <- names(summary(obj$form_mcmc))
       stat_matrix = sim_output
       if (is.curved(obj$form_net)) {
         num_curved <- sum(obj$net$model$etamap$canonical == 0) / 2
