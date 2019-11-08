@@ -182,7 +182,7 @@ par_sim_fun <- function(obj, chain_var) {
       } 
       
       # Impute observed sufficient statistics if missing data
-      obs_ <- summary(form_net)
+      obs_ <- summary(obj$form_net)
         
       if (is.curved(form_net)) {
         for (cur_t in 1:num_curved) { 
