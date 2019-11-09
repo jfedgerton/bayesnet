@@ -269,6 +269,7 @@ comp_info_mat_par <- function(obj, weights) {
 
 ### comp_step
 comp_step <- function(obj, weights, info_mat) {
+  obj$sim$stats <- as.matrix(obj$sim$stats)
   if (is.nan(norm(info_mat[[1]]))) {
     ML_status_fail <- TRUE
     cat("\n    Information matrix is near-singular.")
