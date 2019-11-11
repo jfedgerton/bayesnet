@@ -13,32 +13,36 @@ MCMC_sample_par <- function(obj) {
   for (num_chains in 1:chains)
   {
     f.data.temp <- data.frame(sim_stats[[num_chains]]$stat_matrix)
-    f.data.temp <- f.data.temp[(round(0.05*nrow(f.data.temp))):nrow(f.data.temp),]
-    f.data.temp$chain <- num_chains
+    f.data.temp <- f.data.temp[(floor(0.5*nrow(f.data.temp)) + 1):nrow(f.data.temp),]
     f.test.data[[num_chains]] <- f.data.temp
   }
   
   f.test.data <- do.call(bind_rows, f.test.data)
-  f.test.data$chain <- as.factor(f.test.data$chain)
-  f.test.check <- c()
-  for (check_vars in 1:(ncol(f.test.data) - 1))
+  chain_test <- sort(rep(1:chains, ceiling(0.5*obj$sim$interval)))
+  f.test.check <<- apply(f.test.data, 2, function(x, chain_mix = chain_test)
+    {
+    sum_model <- aov(x ~ chain_mix)
+    p.value <- summary(sum_model)[[1]]$'Pr(>F)'[1]
+    return(p.value)
+  })
+  
+  if (sum(is.na(f.test.check)) != length(f.test.check))
   {
-    var_test <- f.test.data[,check_vars]
+    if (min(f.test.check) < 0.05)
+    {
+      stop("Chains did not mix. Changing the MPLE prior or increasing the interval/burnin may improve the fit.")
+    } else {
+      stat_matrix_all <- list()
+      stat_random_all  <- list()
+      for (check_data in 1:length(sim_stats))
+      {
+        stat_matrix_all[[check_data]] <- data.frame(sim_stats[[check_data]]$stat_matrix)
+        stat_random_all[[check_data]]  <- data.frame(sim_stats[[check_data]]$sim_random)
+      }
+      
+    }
   }
   
-  if (min(f.test.check) < 0.05)
-  {
-    stop("Chains did not mix. Increase intervals and burnin.")
-  } else {
-    stat_matrix_all <- list()
-    stat_random_all  <- list()
-    for (check_data in 1:length(sim_stats))
-    {
-      stat_matrix_all[[check_data]] <- data.frame(sim_stats[[check_data]]$stat_matrix)
-      stat_random_all[[check_data]]  <- data.frame(sim_stats[[check_data]]$sim_random)
-    }
-    
-  }
   
   
   obj$sim$stats <- do.call(bind_rows, stat_matrix_all)
