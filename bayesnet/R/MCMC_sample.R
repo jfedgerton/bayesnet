@@ -28,7 +28,7 @@ MCMC_sample_par <- function(obj) {
   
   if (sum(is.na(f.test.check)) != length(f.test.check))
   {
-    if (min(f.test.check) < 0.005)
+    if (min(f.test.check) < 0.00005)
     {
       stop("Chains did not mix. Changing the MPLE prior or increasing the interval/burnin may improve the fit.")
     } else {
