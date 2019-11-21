@@ -694,10 +694,11 @@ compute_pvalue <- function(obj) {
 }
 
 compute_pvalue_mple <- function(obj) {
-  z_val <- obj$theta_est[names(obj$theta_est) != "between variance"] / obj$se
-  pvalue <- 2 * pnorm(-abs(z_val))
-  pvalue <- as.numeric(pvalue)
-  names(pvalue) <- names(obj$se)
+  min_values <- colSums(obj$boot_fe < 0)/nrow(obj$boot_fe)
+  max_values <- colSums(obj$boot_fe > 0)/nrow(obj$boot_fe)
+  all_obs <- bind_rows(min_values, 
+                       max_values)
+  pvalue <- apply(all_obs, 2, min)*2
   obj$pvalue <- pvalue
   return(obj)
 }

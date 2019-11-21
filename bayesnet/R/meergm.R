@@ -194,11 +194,12 @@ meergm <- function(net,
     if (verbose > 0) { 
       summary(estimates) 
     }
-  } else 
+  } else if (estimation == "BOOTSTRAP-MPLE")
   {
     boot_est <- mple_boot(obj = obj, group = group_data, form = form.stage.2)
     obj$theta_est <- boot_est$theta
     obj$se        <- boot_est$se
+    obj$boot_fe   <- boot_est$boot_fe
     obj <- compute_pvalue_mple(obj)
     
     estimates <- list(theta = obj$theta_est,
@@ -210,8 +211,10 @@ meergm <- function(net,
                       network = net, 
                       mple.estmate = obj$est$chat,
                       btw.var = boot_est$group.re,
-                      type = "Parametric bootstrap")
+                      type = "BOOTSTRAP-MPLE")
     
+  } else {
+    warning("Improper estimation process.")
   }
   
   # Call MCMLE to perform estimation

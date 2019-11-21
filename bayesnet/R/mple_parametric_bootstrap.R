@@ -1,6 +1,6 @@
 mple_boot <- function(obj, group, form)
 {
-  
+  require('tidygraph')
   cur_theta <- obj$est$chat
   vertex_df <- obj$vertex_data
   
