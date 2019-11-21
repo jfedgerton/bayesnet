@@ -121,7 +121,7 @@ opt_fisher <- function(obj) {
       cat("\n    NOTE: Optimization reached maximum number of allowed iterations.")
       cat(paste0("\n\n      - Minimum theta found:"))
       cat(paste0("\n        ",
-                 obj$net$theta_names,
+                 names(obj$net$obs_stats),
                  " = ",
                  round(obj$est$theta_min, digits = 4)))
       

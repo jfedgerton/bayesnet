@@ -15,7 +15,11 @@ prepare_meergm_data <- function(net, group.data, form, verbose=FALSE)
     if (verbose > 0) cat("\n##   building data.frame...")
     ncoef <- length(dta.array$predictor[1,2,])
     dta <- matrix(0, nrow=ndyads, ncol=5+ncoef)
-    group <- ergm::get.node.attr(net,"Group")
+    group_var <- names(net$val[[1]])[grepl('group', names(net$val[[1]]), ignore.case = T)]
+    group <- ergm::get.node.attr(net,group_var)
+    
+    
+    
     
     idx <- 1
     for (tail in 1:(nodes-1)) {
@@ -63,7 +67,8 @@ prepare_meergm_data <- function(net, group.data, form, verbose=FALSE)
     
     if (isTRUE(verbose)) cat("\n##   building data.frame...")
     ncoef <- length(dta.array$predictor[1,2,])
-    group <- ergm::get.node.attr(net,"Group")
+    group_var <- names(net$val[[1]])[grepl('group', names(net$val[[1]]), ignore.case = T)]
+    group <- ergm::get.node.attr(net,group_var)
     
     
     response <- expand.grid(colnames(dta.array$response), colnames(dta.array$response))

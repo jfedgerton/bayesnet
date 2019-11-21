@@ -8,7 +8,8 @@ meergm <- function(net,
                    verbose = 0,
                    chains = 4,
                    eval_loglik = TRUE,
-                   seed = 123) {
+                   seed = 123, 
+                   estimation = "MCMC-MLE") {
   
   require('plyr')
   require('blme')
@@ -39,7 +40,8 @@ meergm <- function(net,
     check_integer(seed, "seed")
     set.seed(seed, "L'Ecuyer")
   } 
-  node_memb <- get.vertex.attribute(net, "Group")
+  group_var <- names(net$val[[1]])[grepl("group", names(net$val[[1]]), ignore.case = T)]
+  node_memb <- get.vertex.attribute(net, group_var)
   group.count <- length(unique(node_memb))  
   
   
@@ -48,7 +50,7 @@ meergm <- function(net,
   form_sim         <- adjust_formula_sim(data = hierarchical_data, form_ref = form_mple)
   form_net         <- adjust_formula_net(form = form.stage.2, form.stage.1 = form.stage.1) 
   form_mcmc        <- adjust_formula_sim_net(form = form.stage.2, form.stage.1 = form.stage.1)
-  form_re          <- adjust_formula_sim_net_re(form = form.stage.2, form.stage.1 = form.stage.1)
+  form_re          <- adjust_formula_sim_net_re(form = form.stage.2, form.stage.1 = form.stage.1, net = net)
   check_curve_form <- adjust_formula_curve(form = form.stage.2, form.stage.1 = form.stage.1)
   # Parse formula to get network and model
   
@@ -70,6 +72,8 @@ meergm <- function(net,
   obj$form_net <- form_net
   obj$form_re <- form_re
   obj$chains <- chains
+  obj$vertex_data <- node_data(net = obj$net$net)
+  obj$directed <- is.directed(obj$net$net)
   # Remove objects that are no longer needed 
   rm(options)
   
@@ -93,97 +97,125 @@ meergm <- function(net,
   }
   
   
-  
-  # Call MCMLE to perform estimation
-  if (verbose > 0) { 
-    cat("\n\n\nBegining Monte-Carlo maximum likelihood estimation\n")
-    cat("===================================================")
-    cat("\n")
-  }
-  obj$hierarchical_data <- hierarchical_data
-  obj$check_curve_form <- check_curve_form
-  obj$form_mcmc <- form_mcmc
-  obj$form_sim <- form_sim
-  obj$form_net <- form_net
-  obj$form_re <- form_re
-  obj$chains <- chains
-  obj <- MCMLE(obj)
-  
-  # Estimate the between block model (if possible)
-  
-  # Evalaute results of MCMLE procedure 
-  if (verbose > 0 & !obj$est$ML_status_fail) {
-    cat(paste0("\n\nComputing approximate loglikelihood at estimate using ", 
-               obj$est$bridge_num, " bridges."))
-    cat("\n\n")
+  if (estimation == "MCMC-MLE")
+  {
+    if (verbose > 0) { 
+      cat("\n\n\nBegining Monte-Carlo maximum likelihood estimation\n")
+      cat("===================================================")
+      cat("\n")
+    }
     
-  } else if (verbose > 0 & obj$est$ML_status_fail) {
-    cat("\n\nEstimation procedure stopping. Estimation unsuccesful.\n\n", call. = FALSE)
-  }
-  
-  
-  # Make structure to be returned
-  if (!obj$est$ML_status_fail) {
-    if (obj$est$inCH_counter > 0) {
-      obj <- compute_pvalue(obj)
-      ## Start here
-      if (eval_loglik) { 
-        obj$likval <- lik_fun(form = form_net, theta = obj$est$theta, 
-                              bridge_num = obj$est$bridge_num, ncores = obj$est$par_n_cores,
-                              form_net = obj$form_net,
-                              offset = obj$est$parameterization == "offset",
-                              burnin = obj$sim$bridge_burnin, 
-                              interval = obj$sim$bridge_interval, 
-                              sample_size = obj$sim$bridge_sample_size) 
-        obj$bic <- compute_bic(obj) 
-      } else { 
-        obj$likval <- NULL
-        obj$bic <- NULL
+    obj <- MCMLE(obj)
+    
+    # Estimate the between block model (if possible)
+    
+    # Evalaute results of MCMLE procedure 
+    if (verbose > 0 & !obj$est$ML_status_fail) {
+      cat(paste0("\n\nComputing approximate loglikelihood at estimate using ", 
+                 obj$est$bridge_num, " bridges."))
+      cat("\n\n")
+      
+    } else if (verbose > 0 & obj$est$ML_status_fail) {
+      cat("\n\nEstimation procedure stopping. Estimation unsuccesful.\n\n", call. = FALSE)
+    }
+    
+    
+    # Make structure to be returned
+    if (!obj$est$ML_status_fail) {
+      if (obj$est$inCH_counter > 0) {
+        obj <- compute_pvalue(obj)
+        ## Start here
+        if (eval_loglik) { 
+          obj$likval <- lik_fun(form = form_net, theta = obj$est$theta, 
+                                bridge_num = obj$est$bridge_num, ncores = obj$est$par_n_cores,
+                                form_net = obj$form_net,
+                                offset = obj$est$parameterization == "offset",
+                                burnin = obj$sim$bridge_burnin, 
+                                interval = obj$sim$bridge_interval, 
+                                sample_size = obj$sim$bridge_sample_size) 
+          obj$bic <- compute_bic(obj) 
+        } else { 
+          obj$likval <- NULL
+          obj$bic <- NULL
+        }
+        mcmc_path <- obj$sim$stats
+        names(obj$se) <- colnames(obj$sim$stats)
+        names(obj$pvalue) <- colnames(obj$sim$stats)
+        names(obj$est$theta) <- colnames(obj$sim$stats)
+        theta_values <- as.vector(obj$est$theta)
+        names(theta_values) <- colnames(obj$sim$stats)
+        
+        nodes.per.group <- table(get.node.attr(net, group_var))
+        dyad.count <- count.edges(nodes.per.group, net = net)
+        sum1 <- summary(net ~ nodemix("group")) #can be any model including nodemix
+        
+        grp.efct <- sum1[startsWith(names(sum1),"mix")]/dyad.count
+        suppressWarnings(grp.efct <- logit(grp.efct))
+        group.var <- c(`grand mean` = mean(grp.efct), `between variance` = var(grp.efct))
+        theta_values <- theta_values[names(theta_values) != "edges"]
+        theta_values <- c(theta_values, group.var)
+        names(obj$se)[names(obj$se) == "edges"] <- "grand mean"
+        estimates <- list(theta = theta_values,
+                          se = obj$se,
+                          pvalue = obj$pvalue, 
+                          bic = obj$bic, 
+                          logLikval = obj$likval,  
+                          mcmc_chain = mcmc_path,
+                          estimation_status = "success",
+                          parameterization = obj$est$parameterization,
+                          formula = form_net,
+                          network = net, 
+                          mple.estmate = obj$est$chat,
+                          btw.var = obj$est$btw.var,
+                          type = "MCMC-MLE")
+        class(estimates) <- "meergm" 
+        rm(mcmc_path); clean_mem()
+      } else if (obj$est$inCH_counter == 0) { 
+        cat("\n\nWarning: Maximum number of iterations reached without the observation lying in the")
+        cat(" interior of the simulated convex hull. Parameters not estimated.\n\n")
+        estimates <- list(theta = NA,
+                          se = NA,
+                          formula = form_net, 
+                          network = net,
+                          mcmc_chain = NULL,
+                          estimation_status = "failed")
+        class(estimates) <- "meergm"
       }
-      mcmc_path <- obj$sim$stats
-      names(obj$se) <- colnames(obj$sim$stats)
-      names(obj$pvalue) <- colnames(obj$sim$stats)
-      names(obj$est$theta) <- colnames(obj$sim$stats)
-      theta_values <- as.vector(obj$est$theta)
-      names(theta_values) <- colnames(obj$sim$stats)
-      estimates <- list(theta = theta_values,
-                        se = obj$se,
-                        pvalue = obj$pvalue, 
-                        bic = obj$bic, 
-                        logLikval = obj$likval,  
-                        mcmc_chain = mcmc_path,
-                        estimation_status = "success",
-                        parameterization = obj$est$parameterization,
-                        formula = form_net,
-                        network = net, 
-                        mple.estmate = obj$est$chat,
-                        btw.var = obj$est$btw.var)
-      class(estimates) <- "meergm" 
-      rm(mcmc_path); clean_mem()
-    } else if (obj$est$inCH_counter == 0) { 
-      cat("\n\nWarning: Maximum number of iterations reached without the observation lying in the")
-      cat(" interior of the simulated convex hull. Parameters not estimated.\n\n")
-      estimates <- list(theta = NA,
+    } else {
+      estimates <- list(theta = NA, 
                         se = NA,
                         formula = form_net, 
-                        network = net,
+                        network = net, 
                         mcmc_chain = NULL,
                         estimation_status = "failed")
-      class(estimates) <- "meergm"
+      class(estimates) <- "meergm" 
     }
-  } else {
-    estimates <- list(theta = NA, 
-                      se = NA,
-                      formula = form_net, 
+    
+    if (verbose > 0) { 
+      summary(estimates) 
+    }
+  } else 
+  {
+    boot_est <- mple_boot(obj = obj, group = group_data, form = form.stage.2)
+    obj$theta_est <- boot_est$theta
+    obj$se        <- boot_est$se
+    obj <- compute_pvalue_mple(obj)
+    
+    estimates <- list(theta = obj$theta_est,
+                      se = obj$se,
+                      pvalue = obj$pvalue, 
+                      estimation_status = "success",
+                      parameterization = obj$est$parameterization,
+                      formula = form_net,
                       network = net, 
-                      mcmc_chain = NULL,
-                      estimation_status = "failed")
-    class(estimates) <- "meergm" 
+                      mple.estmate = obj$est$chat,
+                      btw.var = boot_est$group.re,
+                      type = "Parametric bootstrap")
+    
   }
   
-  if (verbose > 0) { 
-    summary(estimates) 
-  }
+  # Call MCMLE to perform estimation
+  
   return(estimates)
 }
 

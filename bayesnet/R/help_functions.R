@@ -58,6 +58,26 @@ norm2 <- function(vec) {
   return(val)
 }
 
+count.edges <- function(v, net){
+  
+  size <- length(v)
+  total <- matrix(NA, nrow=size, ncol=size)
+  node.mix.names <- matrix(NA, nrow=size, ncol=size)
+  for(i in 1:size){
+    for(j in 1:size){
+      total[i,j] <- ifelse(i==j, v[i]*(v[i]-1), v[i]*v[j])
+      #node.mix.names[i,j] <- paste0("node.")
+    }
+  }
+  
+  
+  if(is.directed(net)){
+    dyads <- as.vector(total)
+  } else {
+    dyads <- as.vector(total[upper.tri(total, diag=TRUE)])
+  }
+}
+
 norm1 <- function(vec) {
   val <- norm(as.matrix(vec), type = "1")
   return(val)
@@ -603,7 +623,7 @@ adjust_formula_sim_net <- function(form, form.stage.1) {
   return(form)
 }
 
-adjust_formula_sim_net_re <- function(form, form.stage.1) {
+adjust_formula_sim_net_re <- function(form, form.stage.1, net = net) {
   all_vars <- str_trim(str_split(as.character(form), "\\+")[[1]])
   
   # Check if gw* terms are included without modifier
@@ -624,8 +644,9 @@ adjust_formula_sim_net_re <- function(form, form.stage.1) {
     all_vars[location] <- "gwdegree(fixed = T)"
   }
   
+  group_name <- names(net$val[[1]])[grepl("group", names(net$val[[1]]), ignore.case = T)]
   # Put all the pieces back together
-  right_side_change <- paste("~ nodemix('Group') +", paste0(all_vars, collapse = " + "))
+  right_side_change <- paste("~", paste0("nodemix('", group_name, "') +"), paste0(all_vars, collapse = " + "))
   form <- as.formula(paste0("simulated_network", right_side_change, "+", form.stage.1))
   
   return(form)
@@ -668,6 +689,15 @@ compute_pvalue <- function(obj) {
   pvalue <- 2 * pnorm(-abs(z_val))
   pvalue <- as.numeric(pvalue)
   
+  obj$pvalue <- pvalue
+  return(obj)
+}
+
+compute_pvalue_mple <- function(obj) {
+  z_val <- obj$theta_est[names(obj$theta_est) != "between variance"] / obj$se
+  pvalue <- 2 * pnorm(-abs(z_val))
+  pvalue <- as.numeric(pvalue)
+  names(pvalue) <- names(obj$se)
   obj$pvalue <- pvalue
   return(obj)
 }

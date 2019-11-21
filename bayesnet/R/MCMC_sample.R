@@ -1,7 +1,6 @@
 MCMC_sample_par <- function(obj) {
   
   
-  obj$vertex_data <- node_data(net = obj$net$net)
   sim_stats <- list()
   chains = obj$chains
   for (num_chains in 1:chains)
@@ -133,7 +132,7 @@ par_sim_fun <- function(obj, chain_var) {
             bglmer(obj$form_sim,
                    data = sim_data,
                    family = binomial,
-                   fixef.prior = NULL)
+                   fixef.prior = t())
           }, silent = T)))
           
           if(class(cur_theta_temp) != "try-error")
