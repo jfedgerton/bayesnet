@@ -529,6 +529,8 @@ adjust_formula_sim <- function(data, form_ref) {
   form_ref <- gsub("'", "", form_ref)
   form_ref <- gsub("\\(", "\\.", form_ref)
   form_ref <- gsub("\\)", "", form_ref)
+  form_ref <- gsub(" = T", "", form_ref)
+  form_ref <- gsub("\\.fixed", "\\.fixed\\.0", form_ref)
   all_vars <- all_vars[order(match(all_vars,form_ref))]
   # Put all the pieces back together
   right_side_change <- paste("~", paste0(all_vars, collapse = " + "))
