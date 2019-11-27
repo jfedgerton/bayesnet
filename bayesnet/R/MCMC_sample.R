@@ -30,16 +30,16 @@ MCMC_sample_par <- function(obj) {
     if (min(f.test.check) < 0.05)
     {
       print("Chains did not mix. Changing the MPLE prior or increasing the interval/burnin may improve the fit.")
-    } else {
-      stat_matrix_all <- list()
-      stat_random_all  <- list()
-      for (check_data in 1:length(sim_stats))
-      {
-        stat_matrix_all[[check_data]] <- data.frame(sim_stats[[check_data]]$stat_matrix)
-        stat_random_all[[check_data]]  <- data.frame(sim_stats[[check_data]]$sim_random)
-      }
-      
+    } 
+    
+    stat_matrix_all <- list()
+    stat_random_all  <- list()
+    for (check_data in 1:length(sim_stats))
+    {
+      stat_matrix_all[[check_data]] <- data.frame(sim_stats[[check_data]]$stat_matrix)
+      stat_random_all[[check_data]]  <- data.frame(sim_stats[[check_data]]$sim_random)
     }
+      
   }
   
   
