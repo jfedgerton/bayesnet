@@ -10,7 +10,7 @@ meergm <- function(net,
                    eval_loglik = TRUE,
                    seed = 123, 
                    estimation = "MCMC-MLE",
-                   prior.var = 100000, 
+                   prior.var = 1e6, 
                    mcmc.prior = 1) {
   
   require('plyr')
