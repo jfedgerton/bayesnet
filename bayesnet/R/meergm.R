@@ -10,12 +10,14 @@ meergm <- function(net,
                    eval_loglik = TRUE,
                    seed = 123, 
                    estimation = "MCMC-MLE",
-                   prior.var = 100000) {
+                   prior.var = 100000, 
+                   mcmc.prior = 1) {
   
   require('plyr')
   require('blme')
   require('stringr')
   require('parallel')
+  
   net <<- net
   if (grepl("gwesp|gwidegree|gwodegreegwesp", form.stage.2))
   {
@@ -75,6 +77,7 @@ meergm <- function(net,
   obj$chains <- chains
   obj$vertex_data <- node_data(net = obj$net$net)
   obj$directed <- is.directed(obj$net$net)
+  obj$mcmc.prior = mcmc.prior
   # Remove objects that are no longer needed 
   rm(options)
   
