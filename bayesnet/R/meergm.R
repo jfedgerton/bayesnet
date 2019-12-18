@@ -202,9 +202,6 @@ meergm <- function(net,
       class(estimates) <- "meergm" 
     }
     
-    if (verbose > 0) { 
-      summary(estimates) 
-    }
   } else if (estimation == "BOOTSTRAP-MPLE")
   {
     boot_est <- mple_boot(obj = obj, group = group_data, form = form.stage.2)
