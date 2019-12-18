@@ -29,7 +29,8 @@ MCMC_sample_par <- function(obj) {
   {
     if (min(f.test.check) < 0.05)
     {
-      print("Chains did not mix. Changing the MPLE prior or increasing the interval/burnin may improve the fit.")
+      cat("\n\n")
+      cat("Chains did not mix. Changing the MPLE prior or increasing the interval/burnin may improve the fit.")
     } 
     
     stat_matrix_all <- list()
@@ -132,7 +133,7 @@ par_sim_fun <- function(obj, chain_var) {
             bglmer(obj$form_sim,
                    data = sim_data,
                    family = binomial,
-                   fixef.prior = normal(sd = c(1, 1)))
+                   fixef.prior = normal(sd = c(obj$mcmc.prior, obj$mcmc.prior)))
           }, silent = T)))
           
           if(class(cur_theta_temp) != "try-error")
