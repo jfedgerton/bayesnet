@@ -695,6 +695,19 @@ compute_pvalue <- function(obj) {
   return(obj)
 }
 
+compute_posterior_pvalue <- function(posterior_estimates) {
+  se <- posterior_estimates$var.posterior
+  theta_est <- posterior_estimates$theta.posterior
+  
+  z_val <- theta_est / se
+  pvalue <- 2 * pnorm(-abs(z_val))
+  pvalue <- as.numeric(pvalue)
+  
+  pvalue <- pvalue
+  names(pvalue) <- names(theta_est)
+  return(pvalue)
+}
+
 compute_pvalue_mple <- function(obj) {
   min_values <- colSums(obj$boot_fe < 0)/nrow(obj$boot_fe)
   max_values <- colSums(obj$boot_fe > 0)/nrow(obj$boot_fe)
@@ -1307,11 +1320,12 @@ check_formula <- function(form) {
   
 }
 
-posterior_distribution <- function(mean_values, group.effect, var_values, n, p.var)
+posterior_distribution <- function(mean_values, group.effect, var_values, n)
 {
   p.mu <- rep(0, length(var_values))
   k <- 1
   s.mean <- mean_values[names(mean_values) %in% names(var_values)]
+  p.var <- 1000
   s.var <- var_values
   n <- n # sample size
   S <- s.var*n # sample SS
