@@ -1320,7 +1320,7 @@ check_formula <- function(form) {
   
 }
 
-posterior_distribution <- function(mean_values, group.effect, var_values, n)
+posterior_distribution <- function(mean_values, group.effect, var_values, n, p.var)
 {
   p.mu <- rep(0, length(var_values))
   k <- 1
