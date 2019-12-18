@@ -9,7 +9,8 @@ meergm <- function(net,
                    chains = 4,
                    eval_loglik = TRUE,
                    seed = 123, 
-                   estimation = "MCMC-MLE") {
+                   estimation = "MCMC-MLE",
+                   prior.var = 100000) {
   
   require('plyr')
   require('blme')
@@ -155,9 +156,17 @@ meergm <- function(net,
         theta_values <- theta_values[names(theta_values) != "edges"]
         theta_values <- c(theta_values, group.var)
         names(obj$se)[names(obj$se) == "edges"] <- "grand mean"
-        estimates <- list(theta = theta_values,
-                          se = obj$se,
-                          pvalue = obj$pvalue, 
+        
+        posterior_estimates <- posterior_distribution(mean_values = theta_values,
+                                                      group.effect = grp.efct,
+                                                      var_values = obj$se,
+                                                      n = obj$sim$interval * obj$chains,
+                                                      p.var = prior.var)
+        pvalue = compute_posterior_pvalue(posterior_estimates)
+        estimates <- list(posterior.theta = posterior_estimates$theta.posterior,
+                          posterior.se = posterior_estimates$var.posterior,
+                          dyad.group.intercepts = posterior_estimates$group.effect.posterior,
+                          pvalue = pvalue, 
                           bic = obj$bic, 
                           logLikval = obj$likval,  
                           mcmc_chain = mcmc_path,
@@ -166,7 +175,6 @@ meergm <- function(net,
                           formula = form_net,
                           network = net, 
                           mple.estmate = obj$est$chat,
-                          btw.var = obj$est$btw.var,
                           type = "MCMC-MLE")
         class(estimates) <- "meergm" 
         rm(mcmc_path); clean_mem()

@@ -1306,3 +1306,24 @@ check_formula <- function(form) {
   }
   
 }
+
+posterior_distribution <- function(mean_values, group.effect, var_values, n, p.var)
+{
+  p.mu <- rep(0, length(var_values))
+  k <- 1
+  s.mean <- mean_values[names(mean_values) %in% names(var_values)]
+  s.var <- var_values
+  n <- n # sample size
+  S <- s.var*n # sample SS
+  k_n <- k + n # post sample size
+  theta.posterior <- k/k_n*p.mu + n/k_n*s.mean # posterior mean
+  v_0 <- 5 # prior DoF
+  v_n <- n+v_0 # post DoF
+  var.posterior <- (v_0*p.var + (n-1)*s.var + k*n/k_n*(s.mean-p.mu)^2)/v_n # posterior variance
+  likelihood.grp.efct = group.effect
+  p.mu <- rep(0, length(likelihood.grp.efct))
+  group.efct.posterior <- k/k_n*p.mu + n/k_n*likelihood.grp.efct
+  return(list(theta.posterior = theta.posterior, 
+              var.posterior = var.posterior,
+              group.effect.posterior = group.efct.posterior))
+}
