@@ -133,7 +133,8 @@ par_sim_fun <- function(obj, chain_var) {
             bglmer(obj$form_sim,
                    data = sim_data,
                    family = binomial,
-                   fixef.prior = NULL)
+                   cov.prior = NULL,
+                   fixef.prior = normal(sd = c(100, 100)))
           }, silent = T)))
           
           if(class(cur_theta_temp) != "try-error")
