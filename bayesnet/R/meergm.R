@@ -59,7 +59,7 @@ meergm <- function(net,
   
  
   # Initialize object
-  obj <- initialize_object(net = net, 
+  obj <<- initialize_object(net = net, 
                            theta_init = theta_init,
                            sim_param = options$sim_param,
                            est_param = options$est_param,
@@ -67,17 +67,17 @@ meergm <- function(net,
                            parameterization = parameterization,
                            form_mple = form_mple,
                            check_curve_form = check_curve_form)
-  obj$group.count <- group.count
-  obj$hierarchical_data <- hierarchical_data
-  obj$check_curve_form <- check_curve_form
-  obj$form_mcmc <- form_mcmc
-  obj$form_sim <- form_sim
-  obj$form_net <- form_net
-  obj$form_re <- form_re
-  obj$chains <- chains
-  obj$vertex_data <- node_data(net = obj$net$net)
-  obj$directed <- is.directed(obj$net$net)
-  obj$mcmc.prior = mcmc.prior
+  obj$group.count <<- group.count
+  obj$hierarchical_data <<- hierarchical_data
+  obj$check_curve_form <<- check_curve_form
+  obj$form_mcmc <<- form_mcmc
+  obj$form_sim <<- form_sim
+  obj$form_net <<- form_net
+  obj$form_re <<- form_re
+  obj$chains <<- chains
+  obj$vertex_data <<- node_data(net = obj$net$net)
+  obj$directed <<- is.directed(obj$net$net)
+  obj$mcmc.prior <<- mcmc.prior
   # Remove objects that are no longer needed 
   rm(options)
   
@@ -226,7 +226,7 @@ meergm <- function(net,
   }
   
   # Call MCMLE to perform estimation
-  
+  rm(obj)
   return(estimates)
 }
 
