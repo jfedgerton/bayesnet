@@ -695,12 +695,18 @@ compute_pvalue <- function(obj) {
   return(obj)
 }
 
-compute_posterior_pvalue <- function(posterior_estimates) {
-  se <- posterior_estimates$var.posterior
-  theta_est <- posterior_estimates$theta.posterior
+compute_se <- function(obj) {
+  se <- sqrt(diag(solve(obj$est$info_mat[[1]])))
+  obj$se <- se
+  return(obj)
+}
+
+compute_posterior_pvalue <- function(posterior_estimates, df) {
+  se <- posterior_estimates$theta.posterior$sd.posterior
+  theta_est <- posterior_estimates$theta.posterior$mean
   
-  z_val <- theta_est / se
-  pvalue <- 2 * pnorm(-abs(z_val))
+  t_val <- theta_est / se
+  pvalue <- 2 * pt(-abs(t_val), df = df)
   pvalue <- as.numeric(pvalue)
   
   pvalue <- pvalue
@@ -1320,24 +1326,29 @@ check_formula <- function(form) {
   
 }
 
-posterior_distribution <- function(mean_values, group.effect, var_values, n, p.var)
+normalgamma_posterior <- function(mean_values, group.effect, var_values, n, p.var, n_prior, df_prior)
 {
+  n_n  <- n + n_prior
   p.mu <- rep(0, length(var_values))
-  k <- 1
-  s.mean <- mean_values[names(mean_values) %in% names(var_values)]
-  p.var <- 1000
-  s.var <- var_values
-  n <- n # sample size
-  S <- s.var*n # sample SS
-  k_n <- k + n # post sample size
-  theta.posterior <- k/k_n*p.mu + n/k_n*s.mean # posterior mean
-  v_0 <- 5 # prior DoF
-  v_n <- n+v_0 # post DoF
-  var.posterior <- (v_0*p.var + (n-1)*s.var + k*n/k_n*(s.mean-p.mu)^2)/v_n # posterior variance
+  s2_0 <- rep(p.var, length(p.mu))
+  theta.posterior  <- (n * mean_values + p.mu * n_prior)/n_n
+  v_n  <- df_prior + n
+  s0v0 = s2_0*df_prior
+  s_n_minus_1 <- var_values*(n - 1)
+  sqr_diff <- n*n_prior*(p.mu - mean_values)^2/n_n
+  var.posterior <- 1/v_n*(s0v0 + s_n_minus_1 + sqr_diff)
   likelihood.grp.efct = group.effect
   p.mu <- rep(0, length(likelihood.grp.efct))
-  group.efct.posterior <- k/k_n*p.mu + n/k_n*likelihood.grp.efct
+  group.efct.posterior <- (n * likelihood.grp.efct + p.mu * n_prior)/n_n
+  
+  theta.posterior <- theta.posterior[order(factor(names(theta.posterior), levels = names(var.posterior)))]
+  sd.posterior <- sqrt(var.posterior/n_n)
+  
+  lb.theta = qt(0.025, v_n) * sd.posterior + theta.posterior
+  ub.theta = qt(0.975, v_n) * sd.posterior + theta.posterior
+  
+  theta.posterior <- data.frame(bind_cols(coefficient = names(lb.theta), LB = lb.theta, mean = theta.posterior, sd.posterior = sd.posterior, UB = ub.theta))
+  
   return(list(theta.posterior = theta.posterior, 
-              var.posterior = var.posterior,
               group.effect.posterior = group.efct.posterior))
 }

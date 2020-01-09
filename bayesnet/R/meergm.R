@@ -11,7 +11,9 @@ meergm <- function(net,
                    seed = 123, 
                    estimation = "MCMC-MLE",
                    prior.var = 1e6, 
-                   mcmc.prior = 1) {
+                   mcmc.prior = 1, 
+                   n_prior = 1000,
+                   df_prior = 1000) {
   
   require('plyr')
   require('blme')
@@ -59,7 +61,7 @@ meergm <- function(net,
   
  
   # Initialize object
-  obj <<- initialize_object(net = net, 
+  obj <- initialize_object(net = net, 
                            theta_init = theta_init,
                            sim_param = options$sim_param,
                            est_param = options$est_param,
@@ -67,17 +69,17 @@ meergm <- function(net,
                            parameterization = parameterization,
                            form_mple = form_mple,
                            check_curve_form = check_curve_form)
-  obj$group.count <<- group.count
-  obj$hierarchical_data <<- hierarchical_data
-  obj$check_curve_form <<- check_curve_form
-  obj$form_mcmc <<- form_mcmc
-  obj$form_sim <<- form_sim
-  obj$form_net <<- form_net
-  obj$form_re <<- form_re
-  obj$chains <<- chains
-  obj$vertex_data <<- node_data(net = obj$net$net)
-  obj$directed <<- is.directed(obj$net$net)
-  obj$mcmc.prior <<- mcmc.prior
+  obj$group.count <- group.count
+  obj$hierarchical_data <- hierarchical_data
+  obj$check_curve_form <- check_curve_form
+  obj$form_mcmc <- form_mcmc
+  obj$form_sim <- form_sim
+  obj$form_net <- form_net
+  obj$form_re <- form_re
+  obj$chains <- chains
+  obj$vertex_data <- node_data(net = obj$net$net)
+  obj$directed <- is.directed(obj$net$net)
+  obj$mcmc.prior = mcmc.prior
   # Remove objects that are no longer needed 
   rm(options)
   
@@ -127,7 +129,6 @@ meergm <- function(net,
     # Make structure to be returned
     if (!obj$est$ML_status_fail) {
       if (obj$est$inCH_counter > 0) {
-        obj <- compute_pvalue(obj)
         ## Start here
         if (eval_loglik) { 
           obj$likval <- lik_fun(form = form_net, theta = obj$est$theta, 
@@ -137,47 +138,48 @@ meergm <- function(net,
                                 burnin = obj$sim$bridge_burnin, 
                                 interval = obj$sim$bridge_interval, 
                                 sample_size = obj$sim$bridge_sample_size) 
-          obj$bic <- compute_bic(obj) 
         } else { 
           obj$likval <- NULL
           obj$bic <- NULL
         }
         mcmc_path <- obj$sim$stats
-        names(obj$se) <- colnames(obj$sim$stats)
-        names(obj$pvalue) <- colnames(obj$sim$stats)
+        #names(obj$se) <- colnames(obj$sim$stats)
+        obj$est$theta <- as.vector(obj$est$theta)
         names(obj$est$theta) <- colnames(obj$sim$stats)
-        theta_values <- as.vector(obj$est$theta)
-        names(theta_values) <- colnames(obj$sim$stats)
-        
+        theta_values <- obj$est$theta
+        obj <- compute_se(obj)
+        names(obj$se) <- names(theta_values)
         nodes.per.group <- table(get.node.attr(net, group_var))
         dyad.count <- count.edges(nodes.per.group, net = net)
-        sum1 <- summary(net ~ nodemix("group")) #can be any model including nodemix
+        sum1 <- apply(obj$sim$re_stats[,grepl("mix\\.group", names(obj$sim$re_stats))], 2, mean) #can be any model including nodemix
         
         grp.efct <- sum1[startsWith(names(sum1),"mix")]/dyad.count
         suppressWarnings(grp.efct <- logit(grp.efct))
         group.var <- c(`grand mean` = mean(grp.efct), `between variance` = var(grp.efct))
         theta_values <- theta_values[names(theta_values) != "edges"]
-        theta_values <- c(theta_values, group.var)
+        theta_values <- c(theta_values, group.var[names(group.var) != "between variance"])
         names(obj$se)[names(obj$se) == "edges"] <- "grand mean"
         
-        posterior_estimates <- posterior_distribution(mean_values = theta_values,
-                                                      group.effect = grp.efct,
-                                                      var_values = obj$se,
-                                                      n = obj$sim$interval * obj$chains,
-                                                      p.var = prior.var)
-        pvalue = compute_posterior_pvalue(posterior_estimates)
-        estimates <- list(posterior.theta = posterior_estimates$theta.posterior,
-                          posterior.se = posterior_estimates$var.posterior,
+        posterior_estimates <- normalgamma_posterior(mean_values = theta_values, 
+                                                     group.effect = grp.efct,
+                                                     var_values = obj$se,
+                                                     n = obj$sim$interval * obj$chains,
+                                                     p.var = prior.var,
+                                                     n_prior = n_prior, 
+                                                     df_prior = df_prior)
+        pvalue = compute_posterior_pvalue(posterior_estimates, df = obj$sim$interval * obj$chains)
+        estimates <- list(posterior.theta = posterior_estimates$theta.posterior$mean,
+                          posterior.se = posterior_estimates$theta.posterior$sd.posterior,
                           dyad.group.intercepts = posterior_estimates$group.effect.posterior,
+                          posterior.btw.var = group.var[names(group.var) == "between variance"],
                           pvalue = pvalue, 
-                          bic = obj$bic, 
                           logLikval = obj$likval,  
                           mcmc_chain = mcmc_path,
                           estimation_status = "success",
                           parameterization = obj$est$parameterization,
                           formula = form_net,
                           network = net, 
-                          mple.estmate = obj$est$chat,
+                          mple.estimate = obj$est$chat,
                           type = "MCMC-MLE")
         class(estimates) <- "meergm" 
         rm(mcmc_path); clean_mem()
@@ -226,7 +228,7 @@ meergm <- function(net,
   }
   
   # Call MCMLE to perform estimation
-  rm(obj)
+  
   return(estimates)
 }
 
