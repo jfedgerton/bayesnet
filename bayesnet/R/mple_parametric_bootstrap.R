@@ -18,7 +18,12 @@ mple_boot <- function(obj, group, form)
   sim_boot <- matrix(NA, ncol = (length(fixef(obj$est$chat)) + choose(obj$group.count, 2) + obj$group.count - 1), nrow  = par_simulations)  
   # Simulate sufficient statistics
   cat("\n\n")
-  cat(paste0("Starting parametric bootstrap:\n"))
+  
+  if (verbose > 0)
+  {
+    cat(paste0("Starting parametric bootstrap:\n")) 
+  }
+  
   sing.check = F
   pct_complete <- round(seq(0.02, 1, 0.02) * par_simulations)
   sim_data_loop  <- 1
@@ -32,14 +37,17 @@ mple_boot <- function(obj, group, form)
   colnames(boot_re) <- paste0("group", 1:ncol(boot_re))
   group.var <- c()
   iter = 0
-  while (iter < par_simulations){
-    if (iter == 1)
+  while (iter < (par_simulations + 1)){
+    if (verbose > 0)
     {
-      cat(paste0(cat("\n",rep("*", round(iter/par_simulations, 2)*100), sep = ""), "|", round(iter/par_simulations, 2)*100, "%"),  "\r")
-      flush.console()
-    } else if (iter %in% pct_complete){
-      cat(paste0(cat(rep("*", round(iter/par_simulations, 2)*50), sep = ""), "|", round(iter/par_simulations, 2)*100, "%"), "\r")
-      flush.console()
+      if (iter == 1)
+      {
+        cat(paste0(cat("\n",rep("*", round(iter/par_simulations, 2)*100), sep = ""), "|", round(iter/par_simulations, 2)*100, "%"),  "\r")
+        flush.console()
+      } else if (iter %in% pct_complete){
+        cat(paste0(cat(rep("*", round(iter/par_simulations, 2)*50), sep = ""), "|", round(iter/par_simulations, 2)*100, "%"), "\r")
+        flush.console()
+      }
     }
     
     tie_pred <- predict(cur_theta, sim_data, type = "response")
