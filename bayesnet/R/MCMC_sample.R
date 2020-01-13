@@ -27,7 +27,7 @@ MCMC_sample_par <- function(obj) {
   
   if (sum(is.na(f.test.check)) != length(f.test.check))
   {
-    if (obj$bverbose > 0)
+    if (obj$verbose > 0)
     {
       if (min(f.test.check) < 0.05)
       {

@@ -79,7 +79,12 @@ meergm <- function(net,
                            mcmc.prior = mcmc.prior)
   
   # Remove objects that are no longer needed 
-  
+  rm(form_mple)       
+  rm(form_sim)        
+  rm(form_net)        
+  rm(form_mcmc)       
+  rm(form_re)         
+  rm(check_curve_form)
   
   # Initialize estimate if an initial estimate is not provided 
   cd_flag <- TRUE
