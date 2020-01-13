@@ -5,7 +5,14 @@ initialize_object <- function(net,
                               verbose,
                               parameterization, 
                               form_mple,
-                              check_curve_form) {
+                              check_curve_form, 
+                              group.count,
+                              hierarchical_data,
+                              form_mcmc,
+                              form_net,
+                              form_re,
+                              chains,
+                              mcmc.prior) {
   
   ##### Create object top structure
   obj <- list(net = NULL,
@@ -58,6 +65,18 @@ initialize_object <- function(net,
   obj$est$score_val <- NULL
   
   obj$est$parameterization <- parameterization;
+  
+  obj$group.count <- group.count
+  obj$hierarchical_data <- hierarchical_data
+  obj$check_curve_form <- check_curve_form
+  obj$form_mcmc <- form_mcmc
+  obj$form_sim <- form_sim
+  obj$form_net <- form_net
+  obj$form_re <- form_re
+  obj$chains <- chains
+  obj$vertex_data <- node_data(net = obj$net$net)
+  obj$directed <- is.directed(obj$net$net)
+  obj$mcmc.prior <- mcmc.prior
   
   return(obj)
 }

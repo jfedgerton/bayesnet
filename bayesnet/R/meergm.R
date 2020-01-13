@@ -10,7 +10,7 @@ meergm <- function(net,
                    eval_loglik = TRUE,
                    seed = 123, 
                    estimation = "MCMC-MLE",
-                   prior.var = 1e6, 
+                   prior.var = 1e4, 
                    mcmc.prior = 1, 
                    n_prior = 1000,
                    df_prior = 1000) {
@@ -61,25 +61,22 @@ meergm <- function(net,
   
  
   # Initialize object
-  obj <- initialize_object(net = net, 
+  obj <<- initialize_object(net = net, 
                            theta_init = theta_init,
                            sim_param = options$sim_param,
                            est_param = options$est_param,
                            verbose = verbose,
                            parameterization = parameterization,
                            form_mple = form_mple,
-                           check_curve_form = check_curve_form)
-  obj$group.count <- group.count
-  obj$hierarchical_data <- hierarchical_data
-  obj$check_curve_form <- check_curve_form
-  obj$form_mcmc <- form_mcmc
-  obj$form_sim <- form_sim
-  obj$form_net <- form_net
-  obj$form_re <- form_re
-  obj$chains <- chains
-  obj$vertex_data <- node_data(net = obj$net$net)
-  obj$directed <- is.directed(obj$net$net)
-  obj$mcmc.prior = mcmc.prior
+                           check_curve_form = check_curve_form,
+                           group.count = group.count,
+                           hierarchical_data = hierarchical_data,
+                           form_mcmc = form_mcmc,
+                           form_net = form_net,
+                           form_re = form_re,
+                           chains = chains,
+                           mcmc.prior = mcmc.prior)
+  
   # Remove objects that are no longer needed 
   rm(options)
   
