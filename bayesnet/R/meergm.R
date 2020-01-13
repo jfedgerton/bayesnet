@@ -51,12 +51,12 @@ meergm <- function(net,
   
   
   # Adjust formula if necessary 
-  form_mple        <- adjust_formula_mple(form = form.stage.2, form.stage.1 = form.stage.1) 
-  form_sim         <- adjust_formula_sim(data = hierarchical_data, form_ref = form_mple)
-  form_net         <- adjust_formula_net(form = form.stage.2, form.stage.1 = form.stage.1) 
-  form_mcmc        <- adjust_formula_sim_net(form = form.stage.2, form.stage.1 = form.stage.1)
-  form_re          <- adjust_formula_sim_net_re(form = form.stage.2, form.stage.1 = form.stage.1, net = net)
-  check_curve_form <- adjust_formula_curve(form = form.stage.2, form.stage.1 = form.stage.1)
+  form_mple        <<- adjust_formula_mple(form = form.stage.2, form.stage.1 = form.stage.1) 
+  form_sim         <<- adjust_formula_sim(data = hierarchical_data, form_ref = form_mple)
+  form_net         <<- adjust_formula_net(form = form.stage.2, form.stage.1 = form.stage.1) 
+  form_mcmc        <<- adjust_formula_sim_net(form = form.stage.2, form.stage.1 = form.stage.1)
+  form_re          <<- adjust_formula_sim_net_re(form = form.stage.2, form.stage.1 = form.stage.1, net = net)
+  check_curve_form <<- adjust_formula_curve(form = form.stage.2, form.stage.1 = form.stage.1)
   # Parse formula to get network and model
   
  
@@ -80,6 +80,12 @@ meergm <- function(net,
   
   # Remove objects that are no longer needed 
   rm(options)
+  rm(form_mple)       
+  rm(form_sim)        
+  rm(form_net)        
+  rm(form_mcmc)       
+  rm(form_re)         
+  rm(check_curve_form)
   
   # Initialize estimate if an initial estimate is not provided 
   cd_flag <- TRUE
