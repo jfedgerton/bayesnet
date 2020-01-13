@@ -73,6 +73,7 @@ meergm <- function(net,
                            hierarchical_data = hierarchical_data,
                            form_mcmc = form_mcmc,
                            form_net = form_net,
+                           from_sim = form_sim,
                            form_re = form_re,
                            chains = chains,
                            mcmc.prior = mcmc.prior)

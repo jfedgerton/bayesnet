@@ -10,6 +10,7 @@ initialize_object <- function(net,
                               hierarchical_data,
                               form_mcmc,
                               form_net,
+                              form_sim,
                               form_re,
                               chains,
                               mcmc.prior) {
