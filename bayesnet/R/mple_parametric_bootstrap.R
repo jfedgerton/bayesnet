@@ -85,7 +85,7 @@ mple_boot <- function(obj, group, form)
         bglmer(obj$form_sim,
                data = boot_data,
                family = binomial,
-               fixef.prior = t())
+               fixef.prior = normal(sd = c(obj$mcmc.prior, obj$mcmc.prior)))
       }, silent = T)))
       
     if (class(theta_boot) != "try-error")
