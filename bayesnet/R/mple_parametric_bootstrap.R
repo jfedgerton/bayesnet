@@ -19,7 +19,7 @@ mple_boot <- function(obj, group, form)
   # Simulate sufficient statistics
   cat("\n\n")
   
-  if (verbose > 0)
+  if (obj$verbose > 0)
   {
     cat(paste0("Starting parametric bootstrap:\n")) 
   }
@@ -37,8 +37,8 @@ mple_boot <- function(obj, group, form)
   colnames(boot_re) <- paste0("group", 1:ncol(boot_re))
   group.var <- c()
   iter = 0
-  while (iter < (par_simulations + 1)){
-    if (verbose > 0)
+  while (iter < par_simulations){
+    if (obj$verbose > 0)
     {
       if (iter == 1)
       {
@@ -99,6 +99,12 @@ mple_boot <- function(obj, group, form)
       boot_re[iter,] <- boot_est_re
       group.var[iter] <- data.frame(VarCorr(theta_boot))$sdcor
     }
+  }
+  
+  if (obj$verbose > 0)
+  {
+    cat(paste0(cat(rep("*", round(iter/par_simulations, 2)*50), sep = ""), "|", round(iter/par_simulations, 2)*100, "%"), "\r")
+    flush.console()
   }
   
   boot_fe_means <- apply(boot_fe, 2, mean)
