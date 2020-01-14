@@ -184,8 +184,8 @@ meergm <- function(net,
       } else if (obj$est$inCH_counter == 0) { 
         cat("\n\nWarning: Maximum number of iterations reached without the observation lying in the")
         cat(" interior of the simulated convex hull. Parameters not estimated.\n\n")
-        estimates <- list(theta = NA,
-                          se = NA,
+        estimates <- list(posterior.theta = NA,
+                          posterior.se = NA,
                           formula = form_net, 
                           network = net,
                           mcmc_chain = NULL,
