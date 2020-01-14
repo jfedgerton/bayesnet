@@ -12,8 +12,8 @@ meergm <- function(net,
                    estimation = "MCMC-MLE",
                    prior.var = 1e4, 
                    mcmc.prior = 1, 
-                   n_prior = 1000,
-                   df_prior = 1000) {
+                   n_prior = 1e4,
+                   df_prior = 1e4) {
   
   require('plyr')
   require('blme')
@@ -193,8 +193,8 @@ meergm <- function(net,
         class(estimates) <- "meergm"
       }
     } else {
-      estimates <- list(theta = NA, 
-                        se = NA,
+      estimates <- list(posterior.theta = NA, 
+                        posterior.se = NA,
                         formula = form_net, 
                         network = net, 
                         mcmc_chain = NULL,
