@@ -49,6 +49,7 @@ MCMC_sample_par <- function(obj) {
   
   obj$sim$stats <- do.call(bind_rows, stat_matrix_all)
   obj$sim$re_stats <- do.call(bind_rows, stat_random_all)
+  names(obj$sim$re_stats) <- names(summary(obj$form_re))
   obj$net$obs_stats <- sim_stats[[1]]$obs_stats
   return(obj)
 }
@@ -167,6 +168,7 @@ par_sim_fun <- function(obj, chain_var) {
     }
   }
   rm(cur_theta)
+  colnames(sim_random) <- names(summary(obj$form_re))
   rm(simulated_network)
   if (iter == 20)
   {
