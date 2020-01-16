@@ -154,8 +154,7 @@ meergm <- function(net,
         grp.efct <- sum1[startsWith(names(sum1),"mix")]/dyad.count
         suppressWarnings(grp.efct <- logit(grp.efct))
         group.var <- c(`grand mean` = mean(grp.efct), `between variance` = var(grp.efct))
-        theta_values <- theta_values[names(theta_values) != "edges"]
-        theta_values <- c(theta_values, group.var[names(group.var) != "between variance"])
+        names(theta_values)[names(theta_values) == "edges"] <- "grand mean"
         names(obj$se)[names(obj$se) == "edges"] <- "grand mean"
         
         posterior_estimates <- normalgamma_posterior(mean_values = theta_values, 
@@ -168,7 +167,7 @@ meergm <- function(net,
         pvalue = compute_posterior_pvalue(posterior_estimates, df = obj$sim$interval * obj$chains)
         estimates <- list(posterior.theta = posterior_estimates$theta.posterior$mean,
                           posterior.se = posterior_estimates$theta.posterior$sd.posterior,
-                          dyad.group.intercepts = posterior_estimates$group.effect.posterior,
+                          #dyad.group.intercepts = posterior_estimates$group.effect.posterior,
                           posterior.btw.var = group.var[names(group.var) == "between variance"],
                           pvalue = pvalue, 
                           logLikval = obj$likval,  
@@ -184,8 +183,8 @@ meergm <- function(net,
       } else if (obj$est$inCH_counter == 0) { 
         cat("\n\nWarning: Maximum number of iterations reached without the observation lying in the")
         cat(" interior of the simulated convex hull. Parameters not estimated.\n\n")
-        estimates <- list(theta = NA,
-                          se = NA,
+        estimates <- list(posterior.theta = NA,
+                          posterior.se = NA,
                           formula = form_net, 
                           network = net,
                           mcmc_chain = NULL,
@@ -193,8 +192,8 @@ meergm <- function(net,
         class(estimates) <- "meergm"
       }
     } else {
-      estimates <- list(theta = NA, 
-                        se = NA,
+      estimates <- list(posterior.theta = NA, 
+                        posterior.se = NA,
                         formula = form_net, 
                         network = net, 
                         mcmc_chain = NULL,
