@@ -29,7 +29,7 @@ MCMLE <- function(obj) {
     sd_ <- apply(obj$sim$stats, 2, sd)
     
     sd_check_sum <- diag(length(obj$est$theta)) %*% sd_
-    if (sum(sd_check_sum < 0.1) > 0) { 
+    if (sum(sd_check_sum < 0.05) > 0) { 
       msg <- "Standard deviation of some simulated statistics are near zero;" 
       msg <- paste(msg, "estimation cannot continue.\n\n")
       msg <- paste(msg, "Possible reasons include:\n") 
