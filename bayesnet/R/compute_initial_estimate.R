@@ -9,7 +9,7 @@ compute_initial_estimate <- function(obj) {
     init <- suppressMessages(
       bglmer(obj$form_sim,  obj$hierarchical_data,
             family = binomial,
-            fixef.prior = normal(sd = c(obj$mcmc.prior, obj$mcmc.prior)))
+            fixef.prior = fixef.prior = NULL)
     )
     re_name <- names(apply(coef(init)$Group_ID, 2, sd)[names(coef(init)$Group_ID) == "(Intercept)"])
     fe_name <- names(apply(coef(init)$Group_ID, 2, sd)[names(coef(init)$Group_ID) != "(Intercept)"])
