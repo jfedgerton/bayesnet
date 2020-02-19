@@ -6,7 +6,7 @@ meergm <- function(net,
                    options = set_options(),  
                    theta_init = NULL,
                    verbose = 0,
-                   chains = 4,
+                   chains = 2,
                    eval_loglik = TRUE,
                    seed = 123, 
                    estimation = "MCMC-MLE",
@@ -144,33 +144,27 @@ meergm <- function(net,
         #names(obj$se) <- colnames(obj$sim$stats)
         obj$est$theta <- as.vector(obj$est$theta)
         names(obj$est$theta) <- colnames(obj$sim$stats)
-        theta_values <- obj$est$theta
         obj <- compute_se(obj)
-        names(obj$se) <- names(theta_values)
+        names(obj$se) <- names(obj$est$theta)
         nodes.per.group <- table(get.node.attr(net, group_var))
         dyad.count <- count.edges(nodes.per.group, net = net)
         sum1 <- apply(obj$sim$re_stats[,grepl("mix\\.group", names(obj$sim$re_stats))], 2, mean) #can be any model including nodemix
         
         grp.efct <- sum1[startsWith(names(sum1),"mix")]/dyad.count
         suppressWarnings(grp.efct <- logit(grp.efct))
+        mean.grp.efct <- mean(grp.efct)
+        center.mean.grp.efct <- obj$est$theta[names(obj$est$theta) == "edges"] - mean.grp.efct
+        grp.efct <- grp.efct + center.mean.grp.efct
         group.var <- c(`grand mean` = mean(grp.efct), `between variance` = var(grp.efct))
-        theta_values <- theta_values[names(theta_values) != "edges"]
-        theta_values <- c(theta_values, group.var[names(group.var) != "between variance"])
+        names(obj$est$theta)[names(obj$est$theta) == "edges"] <- "grand mean"
         names(obj$se)[names(obj$se) == "edges"] <- "grand mean"
         
-        posterior_estimates <- normalgamma_posterior(mean_values = theta_values, 
-                                                     group.effect = grp.efct,
-                                                     var_values = obj$se,
-                                                     n = obj$sim$interval * obj$chains,
-                                                     p.var = prior.var,
-                                                     n_prior = n_prior, 
-                                                     df_prior = df_prior)
-        pvalue = compute_posterior_pvalue(posterior_estimates, df = obj$sim$interval * obj$chains)
-        estimates <- list(posterior.theta = posterior_estimates$theta.posterior$mean,
-                          posterior.se = posterior_estimates$theta.posterior$sd.posterior,
-                          dyad.group.intercepts = posterior_estimates$group.effect.posterior,
-                          posterior.btw.var = group.var[names(group.var) == "between variance"],
-                          pvalue = pvalue, 
+        pvalue = compute_pvalue(obj)
+        estimates <- list(theta = obj$est$theta,
+                          se = obj$se,
+                          dyad.group.intercepts = grp.efct,
+                          btw.var = group.var[names(group.var) == "between variance"],
+                          pvalue = obj$pvalue, 
                           logLikval = obj$likval,  
                           mcmc_chain = mcmc_path,
                           estimation_status = "success",
@@ -184,8 +178,8 @@ meergm <- function(net,
       } else if (obj$est$inCH_counter == 0) { 
         cat("\n\nWarning: Maximum number of iterations reached without the observation lying in the")
         cat(" interior of the simulated convex hull. Parameters not estimated.\n\n")
-        estimates <- list(posterior.theta = NA,
-                          posterior.se = NA,
+        estimates <- list(theta = NA,
+                          se = NA,
                           formula = form_net, 
                           network = net,
                           mcmc_chain = NULL,
